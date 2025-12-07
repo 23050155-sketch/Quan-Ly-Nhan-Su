@@ -9,17 +9,14 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import TokenData
 
 # ====== CẤU HÌNH JWT ======
-SECRET_KEY = "change_this_to_a_long_random_secret"  # nhớ đổi nha
+SECRET_KEY = "hr_super_secret_23050155"   # xài đúng 1 key này cho cả login + verify
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 
-
-# tokenUrl phải trùng với route login mà lát nữa mình tạo
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
@@ -41,10 +38,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return encoded_jwt
 
 
-def get_user_by_username(db: Session, username: str) -> Optional[User]:
-    return db.query(User).filter(User.username == username).first()
-
-
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
@@ -57,16 +50,19 @@ async def get_current_user(
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = payload.get("sub")
-        username: str = payload.get("username")
-        role: str = payload.get("role")
-        if user_id is None or username is None:
+        user_id = payload.get("sub")
+        if user_id is None:
             raise credentials_exception
-        token_data = TokenData(user_id=user_id, username=username, role=role)
     except JWTError:
         raise credentials_exception
 
-    user = db.query(User).filter(User.id == token_data.user_id).first()
+    # ép về int cho chắc
+    try:
+        user_id = int(user_id)
+    except (TypeError, ValueError):
+        raise credentials_exception
+
+    user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise credentials_exception
     return user

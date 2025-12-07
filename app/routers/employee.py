@@ -3,13 +3,18 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, get_current_admin
+
 from app.models.employee import Employee
 from app.schemas.employee import EmployeeCreate, EmployeeUpdate, EmployeeOut
 
 router = APIRouter(prefix="/employees", tags=["Employees"])
 
-@router.post("/", response_model=EmployeeOut)
+@router.post(
+    "/", 
+    response_model=EmployeeOut,
+    dependencies=[Depends(get_current_admin)]
+    )
 def create_employee(emp: EmployeeCreate, db: Session = Depends(get_db)):
     new_emp = Employee(**emp.dict())
     db.add(new_emp)
