@@ -17,7 +17,16 @@ from app.routers.auth import router as auth_router
 # Tạo bảng trong MySQL nếu chưa có
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="HR Employee Management")
+from fastapi import FastAPI
+from fastapi.security import OAuth2PasswordBearer
+
+app = FastAPI(
+    title="HR Employee Management",
+    swagger_ui_init_oauth={
+        "usePkceWithAuthorizationCodeGrant": True
+    }
+)
+
 
 # 🔥 QUAN TRỌNG: gắn router Employees vào app
 app.include_router(auth_router)

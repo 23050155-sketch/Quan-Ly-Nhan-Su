@@ -16,7 +16,8 @@ SECRET_KEY = "change_this_to_a_long_random_secret"  # nhớ đổi nha
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
+
 
 # tokenUrl phải trùng với route login mà lát nữa mình tạo
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")

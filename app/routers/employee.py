@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database import get_db
+from app.core.security import get_current_user
 from app.models.employee import Employee
 from app.schemas.employee import EmployeeCreate, EmployeeUpdate, EmployeeOut
 
@@ -17,7 +18,10 @@ def create_employee(emp: EmployeeCreate, db: Session = Depends(get_db)):
     return new_emp
 
 @router.get("/", response_model=List[EmployeeOut])
-def get_employees(db: Session = Depends(get_db)):
+def get_employees(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+    ):
     return db.query(Employee).all()
 
 @router.get("/{emp_id}", response_model=EmployeeOut)
