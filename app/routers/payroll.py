@@ -2,7 +2,7 @@ from calendar import monthrange
 from datetime import date
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -11,6 +11,9 @@ from app.models.attendance import Attendance
 from app.models.leave_request import LeaveRequest
 from app.models.payroll import Payroll
 from app.schemas.payroll import PayrollCreate, PayrollOut
+
+from app.core.security import get_current_user
+from app.models.user import User
 
 router = APIRouter(prefix="/payrolls", tags=["Payroll"])
 
@@ -64,12 +67,22 @@ def _calc_attendance_days(
     return q.count()
 
 
-# ✅ Tính lương và lưu Payroll
+# ✅ Tính lương và lưu Payroll (CHỈ ADMIN)
 @router.post("/calculate", response_model=PayrollOut)
-def calculate_payroll(data: PayrollCreate, db: Session = Depends(get_db)):
+def calculate_payroll(
+    data: PayrollCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chỉ quản trị viên mới được phép tính lương",
+        )
+
     emp = db.query(Employee).filter(Employee.id == data.employee_id).first()
     if not emp:
-        raise HTTPException(status_code=404, detail="Employee not found")
+        raise HTTPException(status_code=404, detail="Không tìm thấy nhân viên")
 
     # check đã có bảng lương tháng này chưa
     existed = (
@@ -84,7 +97,7 @@ def calculate_payroll(data: PayrollCreate, db: Session = Depends(get_db)):
     if existed:
         raise HTTPException(
             status_code=400,
-            detail="Payroll for this employee and month already exists",
+            detail="Đã tồn tại bảng lương của nhân viên này trong tháng này",
         )
 
     attendance_days = _calc_attendance_days(
@@ -117,28 +130,55 @@ def calculate_payroll(data: PayrollCreate, db: Session = Depends(get_db)):
     return payroll
 
 
-# ✅ Lấy danh sách bảng lương (có filter)
+# ✅ Lấy danh sách bảng lương
 @router.get("/", response_model=List[PayrollOut])
 def list_payrolls(
     employee_id: Optional[int] = None,
     year: Optional[int] = None,
     month: Optional[int] = None,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     q = db.query(Payroll)
-    if employee_id is not None:
-        q = q.filter(Payroll.employee_id == employee_id)
+
+    # User thường: chỉ xem lương của mình
+    if current_user.role != "admin":
+        if employee_id is not None and employee_id != current_user.employee_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Bạn không được phép xem bảng lương của nhân viên khác",
+            )
+        q = q.filter(Payroll.employee_id == current_user.employee_id)
+
+    # Admin: filter thoải mái
+    else:
+        if employee_id is not None:
+            q = q.filter(Payroll.employee_id == employee_id)
+
     if year is not None:
         q = q.filter(Payroll.year == year)
     if month is not None:
         q = q.filter(Payroll.month == month)
+
     return q.all()
 
 
 # ✅ Lấy 1 payroll theo id
 @router.get("/{payroll_id}", response_model=PayrollOut)
-def get_payroll(payroll_id: int, db: Session = Depends(get_db)):
+def get_payroll(
+    payroll_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     p = db.query(Payroll).filter(Payroll.id == payroll_id).first()
     if not p:
-        raise HTTPException(status_code=404, detail="Payroll not found")
+        raise HTTPException(status_code=404, detail="Không tìm thấy bảng lương")
+
+    # Nhân viên chỉ xem được bảng lương của mình
+    if current_user.role != "admin" and current_user.employee_id != p.employee_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không được phép xem bảng lương của nhân viên khác",
+        )
+
     return p

@@ -2,7 +2,7 @@ from calendar import monthrange
 from datetime import date
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -19,11 +19,18 @@ from app.schemas.stats import (
     LeaveSummaryItem,
 )
 
+from app.core.security import get_current_admin
+from app.models.user import User
+
 router = APIRouter(prefix="/stats", tags=["Statistics"])
 
 
+# ✅ Tổng quan hệ thống – CHỈ ADMIN
 @router.get("/overview", response_model=OverviewStats)
-def get_overview_stats(db: Session = Depends(get_db)):
+def get_overview_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin),
+):
     today = date.today()
     year = today.year
     month = today.month
@@ -63,8 +70,14 @@ def get_overview_stats(db: Session = Depends(get_db)):
     )
 
 
+# ✅ Tổng hợp chấm công theo tháng – CHỈ ADMIN
 @router.get("/attendance-summary", response_model=AttendanceSummary)
-def get_attendance_summary(year: int, month: int, db: Session = Depends(get_db)):
+def get_attendance_summary(
+    year: int,
+    month: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin),
+):
     start_month = date(year, month, 1)
     last_day = monthrange(year, month)[1]
     end_month = date(year, month, last_day)
@@ -91,13 +104,18 @@ def get_attendance_summary(year: int, month: int, db: Session = Depends(get_db))
     return AttendanceSummary(year=year, month=month, items=items)
 
 
+# ✅ Tổng hợp ngày nghỉ có phép theo tháng – CHỈ ADMIN
 @router.get("/leave-summary", response_model=LeaveSummary)
-def get_leave_summary(year: int, month: int, db: Session = Depends(get_db)):
+def get_leave_summary(
+    year: int,
+    month: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin),
+):
     start_month = date(year, month, 1)
     last_day = monthrange(year, month)[1]
     end_month = date(year, month, last_day)
 
-    # lấy các đơn đã approved có giao với khoảng [start_month, end_month]
     rows = (
         db.query(
             LeaveRequest.employee_id,
@@ -112,7 +130,6 @@ def get_leave_summary(year: int, month: int, db: Session = Depends(get_db)):
         .all()
     )
 
-    # tính số ngày nghỉ theo từng nhân viên
     days_by_emp = {}
     for emp_id, start, end in rows:
         s = max(start, start_month)

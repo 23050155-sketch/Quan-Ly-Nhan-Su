@@ -1,37 +1,58 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from app.database import get_db
-from app.models.payroll import Payroll
-from app.models.attendance import Attendance
+
 from openpyxl import Workbook
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
+from app.database import get_db
+from app.models.payroll import Payroll
+from app.models.attendance import Attendance
+from app.models.employee import Employee
+
+
+from app.core.security import get_current_admin
+from app.models.user import User
+
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
+
 # =========================
-# EXPORT BANG LUONG EXCEL
+# EXPORT BẢNG LƯƠNG EXCEL (ADMIN)
 # =========================
 @router.get("/payroll-excel")
-def export_payroll_excel(db: Session = Depends(get_db)):
-    payrolls = db.query(Payroll).all()
+def export_payroll_excel(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin),
+):
+    payrolls = (
+        db.query(Payroll, Employee)
+        .join(Employee, Payroll.employee_id == Employee.id)
+        .all()
+    )
 
     wb = Workbook()
     ws = wb.active
     ws.title = "Bang luong"
 
     ws.append([
-        "ID", "Nhan vien", "Thang", "Nam",
+        "ID", "Ten nhan vien", "Thang", "Nam",
         "So ngay lam", "Luong 1 ngay",
         "Tong luong", "Khau tru", "Luong thuc"
     ])
 
-    for p in payrolls:
+    for p, e in payrolls:
         ws.append([
-            p.id, p.employee_id, p.month, p.year,
-            p.attendance_days, p.base_daily_salary,
-            p.gross_salary, p.deductions, p.net_salary
+            p.id,
+            e.full_name,             
+            p.month,
+            p.year,
+            p.attendance_days,
+            p.base_daily_salary,
+            p.gross_salary,
+            p.deductions,
+            p.net_salary
         ])
 
     filename = "bang_luong.xlsx"
@@ -43,12 +64,21 @@ def export_payroll_excel(db: Session = Depends(get_db)):
         filename=filename
     )
 
+
+
 # =========================
-# EXPORT BANG LUONG PDF
+# EXPORT BẢNG LƯƠNG PDF (ADMIN)
 # =========================
 @router.get("/payroll-pdf")
-def export_payroll_pdf(db: Session = Depends(get_db)):
-    payrolls = db.query(Payroll).all()
+def export_payroll_pdf(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin),
+):
+    payrolls = (
+        db.query(Payroll, Employee)
+        .join(Employee, Payroll.employee_id == Employee.id)
+        .all()
+    )
 
     filename = "bang_luong.pdf"
     c = canvas.Canvas(filename, pagesize=A4)
@@ -58,8 +88,8 @@ def export_payroll_pdf(db: Session = Depends(get_db)):
     c.drawString(200, y, "BANG LUONG NHAN VIEN")
     y -= 30
 
-    for p in payrolls:
-        line = f"NV {p.employee_id} | {p.month}/{p.year} | Luong thuc: {p.net_salary}"
+    for p, e in payrolls:
+        line = f"{e.full_name} | {p.month}/{p.year} | Luong thuc: {p.net_salary}"
         c.drawString(50, y, line)
         y -= 20
 
@@ -71,41 +101,50 @@ def export_payroll_pdf(db: Session = Depends(get_db)):
     c.save()
     return FileResponse(filename, media_type="application/pdf", filename=filename)
 
+
+
 # =========================
-# EXPORT CHAM CONG EXCEL
+# EXPORT CHẤM CÔNG EXCEL (ADMIN)
 # =========================
 @router.get("/attendance-excel")
-def export_attendance_excel(db: Session = Depends(get_db)):
-    # Lấy toàn bộ bản ghi chấm công
-    attends = db.query(Attendance).all()
+def export_attendance_excel(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin),
+):
+    attends = (
+        db.query(Attendance, Employee)
+        .join(Employee, Attendance.employee_id == Employee.id)
+        .all()
+    )
 
-    # Tạo file Excel mới
     wb = Workbook()
     ws = wb.active
     ws.title = "Cham cong"
 
-    # Header
-    ws.append(["ID", "Nhan vien", "Ngay", "Gio vao", "Gio ra", "Trang thai"])
+    ws.append([
+        "ID",
+        "Ten nhan vien",     # ✅ TÊN
+        "Ngay",
+        "Gio vao",
+        "Gio ra",
+        "Trang thai"
+    ])
 
-    # Ghi từng dòng dữ liệu
-    for a in attends:
-        # Tự tính trạng thái: có check_in thì "Có mặt", không có thì "Vắng"
-        status = "Có mặt" if a.check_in is not None else "Vắng"
+    for a, e in attends:
+        status_text = "Có mặt" if a.check_in else "Vắng"
 
         ws.append([
             a.id,
-            a.employee_id,
+            e.full_name,           
             str(a.date),
             str(a.check_in) if a.check_in else "",
             str(a.check_out) if a.check_out else "",
-            status
+            status_text
         ])
 
-    # Lưu file
     filename = "cham_cong.xlsx"
     wb.save(filename)
 
-    # Trả file về cho client tải
     return FileResponse(
         filename,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
