@@ -2,6 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
+
+from app.core.security import get_current_admin, get_current_user
+from app.models.user import User
+
+
+
 from app.database import get_db
 from app.models.employee import Employee
 from app.schemas.employee import EmployeeCreate, EmployeeUpdate, EmployeeOut
@@ -17,14 +23,28 @@ def create_employee(emp: EmployeeCreate, db: Session = Depends(get_db)):
     return new_emp
 
 @router.get("/", response_model=List[EmployeeOut])
-def get_employees(db: Session = Depends(get_db)):
+def get_employees(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin),
+):
     return db.query(Employee).all()
 
 @router.get("/{emp_id}", response_model=EmployeeOut)
-def get_employee(emp_id: int, db: Session = Depends(get_db)):
+def get_employee(
+    emp_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # nếu không phải admin, bắt buộc emp_id phải trùng employee_id của user
+    if current_user.role != "admin" and current_user.employee_id != emp_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không được phép xem hồ sơ của người khác",
+        )
+        
     emp = db.query(Employee).filter(Employee.id == emp_id).first()
     if not emp:
-        raise HTTPException(status_code=404, detail="Employee not found")
+        raise HTTPException(status_code=404, detail="Không tìm thấy nhân viên")
     return emp
 
 @router.put("/{emp_id}", response_model=EmployeeOut)
