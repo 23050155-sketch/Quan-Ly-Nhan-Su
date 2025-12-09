@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng nhập hệ thống HR</title>
+    <link rel="stylesheet" href="../assets/css/login.css">
+</head>
+<body>
+<div class="card">
+    <div class="title">Đăng nhập HR</div>
+    <div class="subtitle">Nhập tài khoản để vào hệ thống quản lý nhân sự.</div>
+
+    <form id="loginForm">
+        <div class="field">
+            <label for="username">Tên đăng nhập</label>
+            <input id="username" name="username" type="text" required autocomplete="username">
+        </div>
+        <div class="field">
+            <label for="password">Mật khẩu</label>
+            <input id="password" name="password" type="password" required autocomplete="current-password">
+        </div>
+        <button type="submit" id="loginBtn">
+            <span id="btnText">Đăng nhập</span>
+            <span class="loader" id="btnLoader" style="display:none;"></span>
+        </button>
+    </form>
+
+    <div class="error" id="errorBox"></div>
+    <div class="success" id="successBox"></div>
+
+    <div class="small">
+        Demo: API <code>/auth/login</code> + <code>/auth/me</code> (JWT).<br>
+        Admin → Dashboard, nhân viên → Trang cá nhân.
+    </div>
+</div>
+
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/login.js" defer></script>
+</body>
+</html>

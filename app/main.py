@@ -1,4 +1,7 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+
 from app.database import Base, engine
 from app.models.employee import Employee
 from app.models.attendance import Attendance
@@ -22,6 +25,31 @@ from app.routers.auth import router as auth_router
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="HR Employee Management")
+
+
+
+# ======================
+# SERVE FRONTEND STATIC
+# ======================
+BASE_DIR = Path(__file__).resolve().parent        # trỏ tới thư mục app
+FRONTEND_DIR = BASE_DIR / "front-end"             # app/front-end
+
+# Serve /html/*
+app.mount(
+    "/html",
+    StaticFiles(directory=str(FRONTEND_DIR / "html"), html=True),
+    name="html",
+)
+
+# Serve /assets/*
+app.mount(
+    "/assets",
+    StaticFiles(directory=str(FRONTEND_DIR / "assets")),
+    name="assets",
+)
+
+
+
 
 # 🔥 QUAN TRỌNG: gắn router Employees vào app
 app.include_router(auth.router)

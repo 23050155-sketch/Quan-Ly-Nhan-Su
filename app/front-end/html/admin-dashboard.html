@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - HR</title>
+    <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
+</head>
+<body>
+
+<div class="layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <h2 class="logo">HR Admin</h2>
+        <nav>
+            <a href="#" class="active">Dashboard</a>
+            <a href="#">Employees</a>
+            <a href="#">Attendance</a>
+            <a href="#">Leave Requests</a>
+            <a href="#">Payroll</a>
+            <a href="#">Reports</a>
+            <a href="#" id="logoutBtn">Logout</a>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+        <header class="topbar">
+            <h1>Dashboard</h1>
+            <div id="adminName">Admin</div>
+        </header>
+
+        <section class="stats">
+            <div class="card">
+                <h4>Tổng nhân viên</h4>
+                <p id="totalEmployees">--</p>
+            </div>
+            <div class="card">
+                <h4>Đi làm hôm nay</h4>
+                <p id="todayAttendance">--</p>
+            </div>
+            <div class="card">
+                <h4>Đơn nghỉ chờ duyệt</h4>
+                <p id="pendingLeaves">--</p>
+            </div>
+            <div class="card">
+                <h4>Tổng lương tháng</h4>
+                <p id="totalSalary">--</p>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/admin-dashboard.js" defer></script>
+</body>
+</html>
