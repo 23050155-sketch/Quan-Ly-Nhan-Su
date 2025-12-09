@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Request Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #eef2f7;
+        }
+        .form-container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 35px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        h3 {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 25px;
+            color: #2a4d69;
+        }
+        .form-label {
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="form-container">
+    <h3>Đơn Xin Nghỉ Phép</h3>
+
+    <form id="leaveForm">
+
+        <!-- Nhập Họ và Tên -->
+        <div class="mb-3">
+            <label class="form-label">Họ và tên nhân viên</label>
+            <input type="text" id="employee_name" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
+        </div>
+
+        <!-- Nhập Employee ID -->
+        <div class="mb-3">
+            <label class="form-label">Employee ID</label>
+            <input type="number" id="employee_id" class="form-control" placeholder="Nhập ID nhân viên" required>
+        </div>
+
+        <!-- Nhập phòng ban -->
+        <div class="mb-3">
+            <label class="form-label">Phòng ban</label>
+            <input type="text" id="department" class="form-control" placeholder="Ví dụ: Nhân sự, Kế toán, IT..." required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Ngày bắt đầu</label>
+            <input type="date" id="start_date" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Ngày kết thúc</label>
+            <input type="date" id="end_date" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Lý do nghỉ</label>
+            <textarea id="reason" class="form-control" rows="3" placeholder="Ví dụ: Nghỉ ốm, việc gia đình..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Gửi yêu cầu</button>
+    </form>
+
+    <div id="result" class="alert mt-3" style="display:none;"></div>
+</div>
+
+<script>
+    document.getElementById("leaveForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const payload = {
+            employee_id: parseInt(document.getElementById("employee_id").value),
+            start_date: document.getElementById("start_date").value,
+            end_date: document.getElementById("end_date").value,
+            reason: document.getElementById("reason").value
+        };
+
+        const response = await fetch("http://127.0.0.1:8000/leaves/public", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const resultDiv = document.getElementById("result");
+
+        if (response.ok) {
+            const data = await response.json();
+            resultDiv.style.display = "block";
+            resultDiv.className = "alert alert-success";
+            resultDiv.innerHTML = "Gửi yêu cầu thành công! Mã yêu cầu: " + data.id;
+        } else {
+            const err = await response.json();
+            resultDiv.style.display = "block";
+            resultDiv.className = "alert alert-danger";
+            resultDiv.innerHTML = "Lỗi: " + (err.detail || "Không xác định");
+        }
+    });
+</script>
+
+</body>
+</html>
