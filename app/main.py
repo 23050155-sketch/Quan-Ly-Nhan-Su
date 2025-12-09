@@ -34,3 +34,5 @@ app.include_router(reports.router)
 @app.get("/")
 def root():
     return {"status": "OK", "message": "HR API is running"}
+
+    #abcd
