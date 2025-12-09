@@ -13,6 +13,8 @@ from app.routers.stats import router as stats_router
 from app.routers import reports
 from app.routers import auth
 from app.routers import dashboard
+from app.routers import users
+
 
  
 from app.routers.employee import router as employee_router
@@ -60,6 +62,8 @@ app.include_router(payroll_router)
 app.include_router(stats_router)
 app.include_router(reports.router)
 app.include_router(dashboard.router)
+app.include_router(users.router)
+
 
 
 @app.get("/")

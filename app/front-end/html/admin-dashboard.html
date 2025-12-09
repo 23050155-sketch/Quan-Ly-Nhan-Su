@@ -12,12 +12,13 @@
     <aside class="sidebar">
         <h2 class="logo">HR Admin</h2>
         <nav>
-            <a href="#" class="active">Dashboard</a>
-            <a href="#">Employees</a>
-            <a href="#">Attendance</a>
-            <a href="#">Leave Requests</a>
-            <a href="#">Payroll</a>
-            <a href="#">Reports</a>
+            <a href="#" class="active" data-view="dashboard">Dashboard</a>
+            <a href="#" data-view="users">Users</a>
+            <a href="#" data-view="employees">Employees</a>
+            <a href="#" data-view="attendance">Attendance</a>
+            <a href="#" data-view="leaves">Leave Requests</a>
+            <a href="#" data-view="payroll">Payroll</a>
+            <a href="#" data-view="reports">Reports</a>
             <a href="#" id="logoutBtn">Logout</a>
         </nav>
     </aside>
@@ -25,28 +26,306 @@
     <!-- MAIN -->
     <main class="main">
         <header class="topbar">
-            <h1>Dashboard</h1>
+            <h1 id="pageTitle">Dashboard</h1>
             <div id="adminName">Admin</div>
         </header>
 
-        <section class="stats">
-            <div class="card">
-                <h4>Tổng nhân viên</h4>
-                <p id="totalEmployees">--</p>
+        <!-- DASHBOARD VIEW -->
+        <section id="view-dashboard" class="view active">
+            <section class="stats">
+                <div class="card">
+                    <h4>Tổng nhân viên</h4>
+                    <p id="totalEmployees">--</p>
+                </div>
+                <div class="card">
+                    <h4>Đi làm hôm nay</h4>
+                    <p id="todayAttendance">--</p>
+                </div>
+                <div class="card">
+                    <h4>Đơn nghỉ chờ duyệt</h4>
+                    <p id="pendingLeaves">--</p>
+                </div>
+                <div class="card">
+                    <h4>Tổng lương tháng</h4>
+                    <p id="totalSalary">--</p>
+                </div>
+            </section>
+        </section>
+
+        <!-- USERS VIEW -->
+        <section id="view-users" class="view">
+            <div class="section-header">
+                <h2>Quản lý tài khoản User</h2>
+                <button id="btnReloadUsers" class="btn-secondary">Reload</button>
             </div>
-            <div class="card">
-                <h4>Đi làm hôm nay</h4>
-                <p id="todayAttendance">--</p>
+
+            <form id="userForm" class="form-grid">
+                <input type="hidden" id="userId">
+
+                <div>
+                    <label>Username</label>
+                    <input type="text" id="userUsername" required>
+                </div>
+
+                <div>
+                    <label>Password</label>
+                    <input type="password" id="userPassword" placeholder="Chỉ nhập khi tạo mới">
+                </div>
+
+                <div>
+                    <label>Role</label>
+                    <select id="userRole" required>
+                        <option value="employee">Employee</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Employee ID (nếu là nhân viên)</label>
+                    <input type="number" id="userEmployeeId">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Lưu</button>
+                    <button type="button" class="btn-secondary" id="btnResetUserForm">Reset</button>
+                </div>
+            </form>
+
+            <table class="table" id="usersTable">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Employee ID</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+
+        <!-- EMPLOYEES VIEW -->
+        <section id="view-employees" class="view">
+            <div class="section-header">
+                <h2>Quản lý nhân viên</h2>
+                <button id="btnReloadEmployees" class="btn-secondary">Reload</button>
             </div>
-            <div class="card">
-                <h4>Đơn nghỉ chờ duyệt</h4>
-                <p id="pendingLeaves">--</p>
+
+            <form id="employeeForm" class="form-grid">
+                <input type="hidden" id="empId">
+                <div>
+                    <label>Họ tên</label>
+                    <input type="text" id="empFullName" required>
+                </div>
+                <div>
+                    <label>Email</label>
+                    <input type="email" id="empEmail">
+                </div>
+                <div>
+                    <label>Số điện thoại</label>
+                    <input type="text" id="empPhone">
+                </div>
+                <div>
+                    <label>Giới tính</label>
+                    <select id="empGender">
+                        <option value="">-- Chọn --</option>
+                        <option value="male">Nam</option>
+                        <option value="female">Nữ</option>
+                        <option value="other">Khác</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Phòng ban</label>
+                    <input type="text" id="empDepartment">
+                </div>
+                <div>
+                    <label>Chức vụ</label>
+                    <input type="text" id="empPosition">
+                </div>
+                <div>
+                    <label>Ngày vào làm</label>
+                    <input type="date" id="empStartDate">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary" id="btnSaveEmployee">Thêm / Cập nhật</button>
+                    <button type="button" class="btn-secondary" id="btnResetEmployeeForm">Reset</button>
+                </div>
+            </form>
+
+            <table class="table" id="employeesTable">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Họ tên</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Phòng ban</th>
+                    <th>Chức vụ</th>
+                    <th>Ngày vào làm</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- ATTENDANCE VIEW -->
+        <section id="view-attendance" class="view">
+            <div class="section-header">
+                <h2>Chấm công</h2>
             </div>
-            <div class="card">
-                <h4>Tổng lương tháng</h4>
-                <p id="totalSalary">--</p>
+
+            <form id="attendanceFilterForm" class="form-inline">
+                <div>
+                    <label>Employee ID</label>
+                    <input type="number" id="attEmployeeId" placeholder="Để trống = tất cả">
+                </div>
+                <div>
+                    <label>Ngày</label>
+                    <input type="date" id="attDate">
+                </div>
+                <button type="submit" class="btn-secondary">Lọc</button>
+            </form>
+
+            <table class="table" id="attendanceTable">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Employee ID</th>
+                    <th>Ngày</th>
+                    <th>Check in</th>
+                    <th>Check out</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- LEAVES VIEW -->
+        <section id="view-leaves" class="view">
+            <div class="section-header">
+                <h2>Đơn xin nghỉ</h2>
+            </div>
+
+            <form id="leaveFilterForm" class="form-inline">
+                <div>
+                    <label>Employee ID</label>
+                    <input type="number" id="leaveEmployeeId" placeholder="Để trống = tất cả">
+                </div>
+                <div>
+                    <label>Trạng thái</label>
+                    <select id="leaveStatus">
+                        <option value="">Tất cả</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-secondary">Lọc</button>
+            </form>
+
+            <table class="table" id="leavesTable">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Employee ID</th>
+                    <th>Thời gian</th>
+                    <th>Lý do</th>
+                    <th>Trạng thái</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- PAYROLL VIEW -->
+        <section id="view-payroll" class="view">
+            <div class="section-header">
+                <h2>Bảng lương</h2>
+            </div>
+
+            <form id="payrollCalcForm" class="form-grid">
+                <div>
+                    <label>Employee ID</label>
+                    <input type="number" id="payEmployeeId" required>
+                </div>
+                <div>
+                    <label>Năm</label>
+                    <input type="number" id="payYear" required>
+                </div>
+                <div>
+                    <label>Tháng</label>
+                    <input type="number" id="payMonth" required min="1" max="12">
+                </div>
+                <div>
+                    <label>Lương 1 ngày (VND)</label>
+                    <input type="number" id="payDailySalary" required>
+                </div>
+                <div>
+                    <label>Khấu trừ (VND)</label>
+                    <input type="number" id="payDeductions" value="0">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Tính lương</button>
+                </div>
+            </form>
+
+            <form id="payrollFilterForm" class="form-inline">
+                <div>
+                    <label>Employee ID</label>
+                    <input type="number" id="filterPayEmployeeId" placeholder="Để trống = tất cả">
+                </div>
+                <div>
+                    <label>Năm</label>
+                    <input type="number" id="filterPayYear">
+                </div>
+                <div>
+                    <label>Tháng</label>
+                    <input type="number" id="filterPayMonth" min="1" max="12">
+                </div>
+                <button type="submit" class="btn-secondary">Lọc</button>
+            </form>
+
+            <table class="table" id="payrollTable">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Emp ID</th>
+                    <th>Tháng/Năm</th>
+                    <th>Ngày làm</th>
+                    <th>Ngày nghỉ phép</th>
+                    <th>Lương 1 ngày</th>
+                    <th>Gross</th>
+                    <th>Khấu trừ</th>
+                    <th>Net</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- REPORTS VIEW -->
+        <section id="view-reports" class="view">
+            <div class="section-header">
+                <h2>Reports</h2>
+            </div>
+
+            <div class="reports-actions">
+                <button class="btn-primary" id="btnExportPayrollExcel">
+                    Export bảng lương (Excel)
+                </button>
+                <button class="btn-primary" id="btnExportPayrollPdf">
+                    Export bảng lương (PDF)
+                </button>
+                <button class="btn-primary" id="btnExportAttendanceExcel">
+                    Export chấm công (Excel)
+                </button>
             </div>
         </section>
+
     </main>
 </div>
 

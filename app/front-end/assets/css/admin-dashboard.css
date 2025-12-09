@@ -17,7 +17,7 @@ body {
 /* SIDEBAR */
 .sidebar {
     width: 220px;
-    background: #111827;
+    background: #020617;
     color: #fff;
     padding: 20px;
 }
@@ -66,6 +66,16 @@ body {
     font-size: 22px;
 }
 
+/* VIEWS */
+.view {
+    display: none;
+}
+
+.view.active {
+    display: block;
+}
+
+/* DASHBOARD CARDS */
 .stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -89,4 +99,139 @@ body {
     font-size: 26px;
     font-weight: 700;
     color: #111827;
+}
+
+/* COMMON SECTION LAYOUT */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.section-header h2 {
+    font-size: 18px;
+}
+
+/* BUTTONS */
+.btn-primary,
+.btn-secondary {
+    border: none;
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-primary {
+    background: #4f46e5;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #4338ca;
+}
+
+.btn-secondary {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.btn-secondary:hover {
+    background: #d1d5db;
+}
+
+/* FORMS */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 16px;
+    margin-bottom: 16px;
+    background: #fff;
+    padding: 14px 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+}
+
+.form-grid label,
+.form-inline label {
+    font-size: 13px;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.form-grid input,
+.form-grid select,
+.form-inline input,
+.form-inline select {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+}
+
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    margin-bottom: 12px;
+    align-items: flex-end;
+}
+
+.form-inline > div {
+    min-width: 180px;
+}
+
+/* TABLE */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+    font-size: 13px;
+}
+
+.table thead {
+    background: #f3f4f6;
+}
+
+.table th,
+.table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.table th {
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.table td .btn-secondary,
+.table td .btn-primary {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+/* REPORTS */
+.reports-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
 }

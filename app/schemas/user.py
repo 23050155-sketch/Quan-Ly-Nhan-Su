@@ -12,13 +12,20 @@ class UserBase(BaseModel):
     employee_id: Optional[int] = None
 
 
+# ====== CREATE USER ======
 class UserCreate(UserBase):
     password: str                 # mật khẩu plain để hash
 
 
+# ====== UPDATE USER ======
+class UserUpdate(UserBase):
+    password: Optional[str] = None   # cho phép bỏ trống khi update
+
+
+# ====== USER OUTPUT ======
 class UserOut(UserBase):
     id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None   # ✅ FIX lỗi None
 
     class Config:
         orm_mode = True
