@@ -44,6 +44,23 @@ def create_leave(
     db.refresh(leave)
     return leave
 
+    # 🔓 Endpoint PUBLIC cho form HTML (không cần login)
+@router.post("/public", response_model=LeaveOut)
+def create_leave_public(
+    data: LeaveCreate,
+    db: Session = Depends(get_db),
+):
+    # Kiểm tra nhân viên tồn tại
+    emp = db.query(Employee).filter(Employee.id == data.employee_id).first()
+    if not emp:
+        raise HTTPException(status_code=404, detail="Không tìm thấy nhân viên")
+
+    leave = LeaveRequest(**data.dict())
+    db.add(leave)
+    db.commit()
+    db.refresh(leave)
+    return leave
+
 
 # ✅ Lấy danh sách đơn nghỉ
 @router.get("/", response_model=List[LeaveOut])
