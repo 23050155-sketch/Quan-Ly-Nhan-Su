@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.employee import Employee
+from app.services.email_service import send_payroll_email
 from app.models.attendance import Attendance
 from app.models.leave_request import LeaveRequest
 from app.models.payroll import Payroll
@@ -67,7 +68,7 @@ def _calc_attendance_days(
     return q.count()
 
 
-# ✅ Tính lương và lưu Payroll (CHỈ ADMIN)
+# Tính lương và lưu Payroll (CHỈ ADMIN)
 @router.post("/calculate", response_model=PayrollOut)
 def calculate_payroll(
     data: PayrollCreate,
@@ -127,10 +128,26 @@ def calculate_payroll(
     db.add(payroll)
     db.commit()
     db.refresh(payroll)
+    
+    
+    # GỬI EMAIL THÔNG BÁO PHIẾU LƯƠNG
+    try:
+        send_payroll_email(
+            employee_email=emp.email,
+            employee_name=emp.full_name,
+            year=data.year,
+            month=data.month,
+            net_salary=net_salary,
+        )
+    except Exception as e:
+        # Không cho API crash chỉ vì email fail
+        print(f"[EMAIL] Lỗi khi gửi email phiếu lương: {e}")
+    
+    
     return payroll
 
 
-# ✅ Lấy danh sách bảng lương
+# Lấy danh sách bảng lương
 @router.get("/", response_model=List[PayrollOut])
 def list_payrolls(
     employee_id: Optional[int] = None,
@@ -163,7 +180,7 @@ def list_payrolls(
     return q.all()
 
 
-# ✅ Lấy 1 payroll theo id
+# Lấy 1 payroll theo id
 @router.get("/{payroll_id}", response_model=PayrollOut)
 def get_payroll(
     payroll_id: int,

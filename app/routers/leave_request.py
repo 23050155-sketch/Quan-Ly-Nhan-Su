@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.employee import Employee
+from app.services.email_service import send_leave_status_email
 from app.models.leave_request import LeaveRequest
 from app.schemas.leave_request import (
     LeaveCreate,
@@ -78,7 +79,7 @@ def list_leaves(
 
 
 
-# ✅ Lấy 1 đơn theo id
+# Lấy 1 đơn theo id
 @router.get("/{leave_id}", response_model=LeaveOut)
 def get_leave(
     leave_id: int,
@@ -99,7 +100,7 @@ def get_leave(
     return leave
 
 
-# ✅ Update đơn (chỉ cho sửa khi đang pending)
+# Update đơn (chỉ cho sửa khi đang pending)
 @router.put("/{leave_id}", response_model=LeaveOut)
 def update_leave(
     leave_id: int,
@@ -132,7 +133,7 @@ def update_leave(
     return leave
 
 
-# ✅ Duyệt đơn (chỉ admin)
+# Duyệt đơn (chỉ admin)
 @router.put("/{leave_id}/approve", response_model=LeaveOut)
 def approve_leave(
     leave_id: int,
@@ -152,10 +153,24 @@ def approve_leave(
     leave.status = "approved"
     db.commit()
     db.refresh(leave)
+    
+    # GỬI EMAIL THÔNG BÁO ĐƯỢC DUYỆT
+    try:
+        emp = db.query(Employee).filter(Employee.id == leave.employee_id).first()
+        if emp:
+            send_leave_status_email(
+                employee_email=emp.email,
+                employee_name=emp.full_name,
+                leave_id=leave.id,
+                status=leave.status,
+            )
+    except Exception as e:
+        print(f"[EMAIL] Lỗi khi gửi email duyệt đơn nghỉ: {e}")
+    
     return leave
 
 
-# ✅ Từ chối đơn (chỉ admin)
+# Từ chối đơn (chỉ admin)
 @router.put("/{leave_id}/reject", response_model=LeaveOut)
 def reject_leave(
     leave_id: int,
@@ -175,10 +190,24 @@ def reject_leave(
     leave.status = "rejected"
     db.commit()
     db.refresh(leave)
+    
+    # GỬI EMAIL THÔNG BÁO BỊ TỪ CHỐI
+    try:
+        emp = db.query(Employee).filter(Employee.id == leave.employee_id).first()
+        if emp:
+            send_leave_status_email(
+                employee_email=emp.email,
+                employee_name=emp.full_name,
+                leave_id=leave.id,
+                status=leave.status,
+            )
+    except Exception as e:
+        print(f"[EMAIL] Lỗi khi gửi email từ chối đơn nghỉ: {e}")
+
     return leave
 
 
-# ✅ Xoá đơn (chỉ admin)
+# Xoá đơn (chỉ admin)
 @router.delete("/{leave_id}")
 def delete_leave(
     leave_id: int,
