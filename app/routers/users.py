@@ -1,52 +1,61 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserOut, UserUpdate
+from app.schemas.user import UserCreate, UserOut
 from app.core.security import get_password_hash, get_current_admin
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-# ========== GET ALL USERS ==========
-@router.get("/", response_model=list[UserOut])
-def get_users(
+# ====== LẤY DANH SÁCH USER (ADMIN) ======
+@router.get("/", response_model=List[UserOut])
+def list_users(
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_admin),
+    current_admin: User = Depends(get_current_admin),
 ):
     return db.query(User).all()
 
 
-# ========== GET USER BY ID ==========
+# ====== LẤY 1 USER THEO ID (ADMIN) ======
 @router.get("/{user_id}", response_model=UserOut)
 def get_user(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_admin),
+    current_admin: User = Depends(get_current_admin),
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="User không tồn tại")
     return user
 
 
-# ========== CREATE USER ==========
-@router.post("/", response_model=UserOut)
+# ====== TẠO USER MỚI (ADMIN) ======
+@router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_user(
     user_in: UserCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_admin),
+    current_admin: User = Depends(get_current_admin),
 ):
+    # check trùng username
     existed = db.query(User).filter(User.username == user_in.username).first()
     if existed:
-        raise HTTPException(status_code=400, detail="Username already exists")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username đã tồn tại",
+        )
+
+    # hash mật khẩu
+    hashed_pw = get_password_hash(user_in.password)
 
     user = User(
         username=user_in.username,
         email=user_in.email,
-        password=get_password_hash(user_in.password),
-        role=user_in.role,
+        password_hash=hashed_pw,               # ✅ dùng password_hash
+        role=user_in.role or "employee",
         employee_id=user_in.employee_id,
     )
 
@@ -56,44 +65,17 @@ def create_user(
     return user
 
 
-# ========== UPDATE USER ==========
-@router.put("/{user_id}", response_model=UserOut)
-def update_user(
-    user_id: int,
-    user_in: UserUpdate,   # ✅ dùng UserUpdate, không phải UserCreate
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_admin),
-):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    user.username = user_in.username
-    user.email = user_in.email
-    user.role = user_in.role
-    user.employee_id = user_in.employee_id
-
-    # chỉ đổi password nếu client gửi kèm
-    if user_in.password:
-        user.password = get_password_hash(user_in.password)
-
-    db.commit()
-    db.refresh(user)
-    return user
-
-
-
-# ========== DELETE USER ==========
+# ====== XÓA USER (ADMIN) ======
 @router.delete("/{user_id}")
 def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_admin),
+    current_admin: User = Depends(get_current_admin),
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="User không tồn tại")
 
     db.delete(user)
     db.commit()
-    return {"message": "Deleted successfully"}
+    return {"detail": "Xóa user thành công"}
