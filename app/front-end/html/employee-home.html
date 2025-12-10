@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Employee Portal - HR</title>
+    <link rel="stylesheet" href="../assets/css/employee-home.css">
+</head>
+<body>
+
+<div class="layout">
+    <header class="topbar">
+        <div>
+            <h1>Employee Portal</h1>
+            <p id="welcomeText">Xin chào, nhân viên</p>
+        </div>
+        <button id="btnLogout" class="btn-secondary">Logout</button>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab active" data-view="profile">Hồ sơ</button>
+        <button class="tab" data-view="attendance">Chấm công</button>
+        <button class="tab" data-view="leaves">Xin nghỉ phép</button>
+        <button class="tab" data-view="payroll">Lương</button>
+    </nav>
+
+    <main class="content">
+        <!-- PROFILE -->
+        <section id="view-profile" class="view active">
+            <h2>Thông tin cá nhân</h2>
+            <div id="profileCard" class="card">
+                <p>Đang tải thông tin...</p>
+            </div>
+        </section>
+
+        <!-- ATTENDANCE -->
+        <section id="view-attendance" class="view">
+            <h2>Lịch sử chấm công</h2>
+
+            <form id="attFilterForm" class="form-inline">
+                <div>
+                    <label>Ngày từ</label>
+                    <input type="date" id="attFromDate">
+                </div>
+                <div>
+                    <label>Đến ngày</label>
+                    <input type="date" id="attToDate">
+                </div>
+                <button class="btn-secondary" type="submit">Lọc</button>
+            </form>
+
+            <table class="table" id="attTable">
+                <thead>
+                <tr>
+                    <th>Ngày</th>
+                    <th>Check in</th>
+                    <th>Check out</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- LEAVES -->
+        <section id="view-leaves" class="view">
+            <h2>Đơn xin nghỉ của tôi</h2>
+
+            <form id="leaveCreateForm" class="form-grid">
+                <div>
+                    <label>Từ ngày</label>
+                    <input type="date" id="leaveStart" required>
+                </div>
+                <div>
+                    <label>Đến ngày</label>
+                    <input type="date" id="leaveEnd" required>
+                </div>
+                <div class="full-row">
+                    <label>Lý do</label>
+                    <textarea id="leaveReason" rows="2"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Gửi đơn nghỉ</button>
+                </div>
+            </form>
+
+            <table class="table" id="leavesTable">
+                <thead>
+                <tr>
+                    <th>Thời gian</th>
+                    <th>Lý do</th>
+                    <th>Trạng thái</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- PAYROLL -->
+        <section id="view-payroll" class="view">
+            <h2>Lương của tôi</h2>
+
+            <form id="payFilterForm" class="form-inline">
+                <div>
+                    <label>Năm</label>
+                    <input type="number" id="payYearFilter" placeholder="VD: 2025">
+                </div>
+                <div>
+                    <label>Tháng</label>
+                    <input type="number" id="payMonthFilter" min="1" max="12">
+                </div>
+                <button class="btn-secondary" type="submit">Lọc</button>
+            </form>
+
+            <table class="table" id="payTable">
+                <thead>
+                <tr>
+                    <th>Tháng/Năm</th>
+                    <th>Ngày làm</th>
+                    <th>Ngày nghỉ phép</th>
+                    <th>Lương 1 ngày</th>
+                    <th>Lương gross</th>
+                    <th>Khấu trừ</th>
+                    <th>Lương thực nhận</th>
+                    <th>Phiếu lương</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </main>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/employee-home.js" defer></script>
+</body>
+</html>

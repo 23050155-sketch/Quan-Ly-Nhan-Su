@@ -313,6 +313,27 @@
                 <h2>Reports</h2>
             </div>
 
+            <!-- Biểu đồ chấm công -->
+            <h3 style="font-size:16px; margin-bottom:8px;">Biểu đồ số ngày đi làm theo tháng</h3>
+
+            <form id="attendanceChartForm" class="form-inline">
+                <div>
+                    <label>Năm</label>
+                    <input type="number" id="chartYear" placeholder="VD: 2025">
+                </div>
+                <div>
+                    <label>Tháng</label>
+                    <input type="number" id="chartMonth" min="1" max="12" placeholder="1-12">
+                </div>
+                <button type="submit" class="btn-secondary">Xem biểu đồ</button>
+            </form>
+
+            <div class="chart-container">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+
+            <hr style="margin:18px 0; border:none; border-top:1px solid #e5e7eb;">
+
             <div class="reports-actions">
                 <button class="btn-primary" id="btnExportPayrollExcel">
                     Export bảng lương (Excel)
@@ -326,9 +347,11 @@
             </div>
         </section>
 
+
     </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="../assets/js/config.js"></script>
 <script src="../assets/js/admin-dashboard.js" defer></script>
 </body>

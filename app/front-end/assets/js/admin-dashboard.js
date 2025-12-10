@@ -1,9 +1,14 @@
-// Lấy token & user info
+// ====== AUTH & COMMON ======
 const token = localStorage.getItem(TOKEN_KEY);
 const userInfo = JSON.parse(localStorage.getItem(USER_INFO_KEY) || "{}");
 
 if (!token) {
     window.location.href = "/html/login.html";
+}
+
+if (userInfo.role !== "admin") {
+    // Không phải admin thì quăng về trang nhân viên
+    window.location.href = EMPLOYEE_HOME_URL;
 }
 
 document.getElementById("adminName").textContent =
@@ -21,6 +26,8 @@ const views = {
     reports: document.getElementById("view-reports"),
 };
 const pageTitle = document.getElementById("pageTitle");
+
+let attendanceChartInstance = null; // dùng cho Chart.js (Reports)
 
 function showView(name) {
     Object.entries(views).forEach(([key, el]) => {
@@ -59,6 +66,7 @@ function showView(name) {
             break;
         case "reports":
             pageTitle.textContent = "Reports";
+            loadAttendanceChart(); // load chart khi mở tab Reports
             break;
     }
 }
@@ -139,12 +147,6 @@ async function apiDelete(path) {
 // ---------- DASHBOARD ----------
 async function loadDashboard() {
     try {
-        // chỉ admin mới được xem /stats/overview
-        if (userInfo.role !== "admin") {
-            alert("Bạn không có quyền truy cập dashboard admin");
-            window.location.href = "/html/login.html";
-            return;
-        }
         const data = await apiGet("/stats/overview");
         document.getElementById("totalEmployees").textContent =
             data.total_employees;
@@ -160,7 +162,9 @@ async function loadDashboard() {
     }
 }
 
-// ---------- USERS ----------
+// =====================================================================
+//                              USERS
+// =====================================================================
 const usersTableBody = document.querySelector("#usersTable tbody");
 const userForm = document.getElementById("userForm");
 const btnReloadUsers = document.getElementById("btnReloadUsers");
@@ -173,7 +177,7 @@ function resetUserForm() {
 
 async function loadUsers() {
     try {
-        const users = await apiGet("/users"); // admin-only
+        const users = await apiGet("/users");
         usersTableBody.innerHTML = "";
         users.forEach(u => {
             const tr = document.createElement("tr");
@@ -209,6 +213,7 @@ usersTableBody.addEventListener("click", async (e) => {
             document.getElementById("userUsername").value = u.username;
             document.getElementById("userRole").value = u.role;
             document.getElementById("userEmployeeId").value = u.employee_id || "";
+            document.getElementById("userPassword").value = ""; // không show password
         } catch (err) {
             console.error(err);
             alert("Không lấy được user");
@@ -235,6 +240,7 @@ userForm.addEventListener("submit", async (e) => {
         username: document.getElementById("userUsername").value.trim(),
         role: document.getElementById("userRole").value,
         employee_id: document.getElementById("userEmployeeId").value || null,
+        email: null,
     };
 
     const password = document.getElementById("userPassword").value.trim();
@@ -272,9 +278,10 @@ btnResetUserForm.addEventListener("click", (e) => {
     e.preventDefault();
     resetUserForm();
 });
-    
 
-// ---------- EMPLOYEES ----------
+// =====================================================================
+//                              EMPLOYEES
+// =====================================================================
 const employeesTableBody = document.querySelector("#employeesTable tbody");
 const empForm = document.getElementById("employeeForm");
 const btnReloadEmployees = document.getElementById("btnReloadEmployees");
@@ -319,7 +326,6 @@ employeesTableBody.addEventListener("click", async (e) => {
     const action = btn.dataset.action;
 
     if (action === "edit") {
-        // lấy chi tiết nhân viên
         try {
             const emp = await apiGet(`/employees/${id}`);
             document.getElementById("empId").value = emp.id;
@@ -387,7 +393,9 @@ btnResetEmployeeForm.addEventListener("click", (e) => {
     resetEmployeeForm();
 });
 
-// ---------- ATTENDANCE ----------
+// =====================================================================
+//                              ATTENDANCE
+// =====================================================================
 const attForm = document.getElementById("attendanceFilterForm");
 const attTableBody = document.querySelector("#attendanceTable tbody");
 
@@ -424,7 +432,9 @@ attForm.addEventListener("submit", (e) => {
     loadAttendance();
 });
 
-// ---------- LEAVES ----------
+// =====================================================================
+//                              LEAVES
+// =====================================================================
 const leaveForm = document.getElementById("leaveFilterForm");
 const leavesTableBody = document.querySelector("#leavesTable tbody");
 
@@ -487,7 +497,9 @@ leaveForm.addEventListener("submit", (e) => {
     loadLeaves();
 });
 
-// ---------- PAYROLL ----------
+// =====================================================================
+//                              PAYROLL
+// =====================================================================
 const payrollCalcForm = document.getElementById("payrollCalcForm");
 const payrollFilterForm = document.getElementById("payrollFilterForm");
 const payrollTableBody = document.querySelector("#payrollTable tbody");
@@ -556,7 +568,11 @@ payrollFilterForm.addEventListener("submit", (e) => {
     loadPayroll();
 });
 
-// ---------- REPORTS ----------
+// =====================================================================
+//                              REPORTS
+// =====================================================================
+
+// helper download có kèm token
 async function downloadFile(path, filename) {
     try {
         const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -604,6 +620,77 @@ document.getElementById("btnExportAttendanceExcel")
         downloadFile("/reports/attendance-excel", "cham_cong.xlsx");
     });
 
+// ----- Attendance Chart -----
+async function loadAttendanceChart() {
+    const yearInput = document.getElementById("chartYear");
+    const monthInput = document.getElementById("chartMonth");
+    const canvas = document.getElementById("attendanceChart");
+    if (!yearInput || !monthInput || !canvas) return;
 
-// ---------- INIT ----------
+    // Nếu không nhập, dùng năm/tháng hiện tại
+    const now = new Date();
+    const year = yearInput.value || now.getFullYear();
+    const month = monthInput.value || (now.getMonth() + 1);
+
+    // Gán lại lên input cho user thấy luôn
+    yearInput.value = year;
+    monthInput.value = month;
+
+    const params = new URLSearchParams();
+    params.append("year", year);
+    params.append("month", month);
+
+    try {
+        const data = await apiGet(`/stats/attendance-summary?${params.toString()}`);
+
+        // data expected: { year, month, items: [{ employee_id, days }, ...] }
+        const labels = (data.items || []).map(i => `Emp ${i.employee_id}`);
+        const values = (data.items || []).map(i => i.days);
+
+        const ctx = canvas.getContext("2d");
+
+        if (attendanceChartInstance) {
+            attendanceChartInstance.destroy();
+        }
+
+        attendanceChartInstance = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: `Số ngày đi làm (${data.month}/${data.year})`,
+                        data: values,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                        },
+                    },
+                },
+            },
+        });
+    } catch (err) {
+        console.error(err);
+        alert("Không tải được dữ liệu biểu đồ chấm công");
+    }
+}
+
+const attendanceChartForm = document.getElementById("attendanceChartForm");
+if (attendanceChartForm) {
+    attendanceChartForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        loadAttendanceChart();
+    });
+}
+
+// =====================================================================
+//                              INIT
+// =====================================================================
 showView("dashboard");
