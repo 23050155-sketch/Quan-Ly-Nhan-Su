@@ -20,6 +20,7 @@
             <a href="#" data-view="payroll">Payroll</a>
             <a href="#" data-view="performance">Performance Reviews</a>
             <a href="#" data-view="reports">Reports</a>
+            <a href="#" data-view="compliance">Compliance</a>
             <a href="#" id="logoutBtn">Logout</a>
         </nav>
     </aside>
@@ -413,6 +414,57 @@
                 <button class="btn-primary" id="btnExportAttendanceExcel">
                     Export chấm công (Excel)
                 </button>
+            </div>
+        </section>
+
+        <!-- COMPLIANCE -->
+        <section id="view-compliance" class="view">
+            <h2>Compliance Policies</h2>
+
+            <div class="card">
+                <h3>Tạo policy mới</h3>
+                <form id="complianceCreateForm" class="form-inline">
+                    <div class="form-row">
+                        <label>Tiêu đề</label>
+                        <input type="text" id="compTitle" required placeholder="Ví dụ: Nội quy đi làm đúng giờ">
+                    </div>
+                    <div class="form-row">
+                        <label>Mã policy</label>
+                        <input type="text" id="compCode" placeholder="VD: HR-001">
+                    </div>
+                    <div class="form-row">
+                        <label>Ngày hiệu lực</label>
+                        <input type="date" id="compEffectiveDate" required>
+                    </div>
+                    <div class="form-row">
+                        <label>Mô tả</label>
+                        <textarea id="compDescription" rows="3" placeholder="Nội dung chính sách..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <label>Kích hoạt</label>
+                        <input type="checkbox" id="compIsActive" checked>
+                    </div>
+                    <button type="submit" class="btn-primary">Tạo policy</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>Danh sách policy</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Tiêu đề</th>
+                            <th>Mã</th>
+                            <th>Ngày hiệu lực</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="compliancePoliciesTbody">
+                        <!-- render bằng JS -->
+                    </tbody>
+                </table>
             </div>
         </section>
 
