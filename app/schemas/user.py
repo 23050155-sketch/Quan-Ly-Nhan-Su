@@ -25,7 +25,7 @@ class UserUpdate(UserBase):
 # ====== USER OUTPUT ======
 class UserOut(UserBase):
     id: int
-    created_at: Optional[datetime] = None   # ✅ FIX lỗi None
+    created_at: Optional[datetime] = None   
 
     class Config:
         orm_mode = True

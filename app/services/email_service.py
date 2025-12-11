@@ -1,6 +1,12 @@
 # app/services/email_service.py
 
 import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+
 import smtplib
 from email.message import EmailMessage
 from typing import Optional

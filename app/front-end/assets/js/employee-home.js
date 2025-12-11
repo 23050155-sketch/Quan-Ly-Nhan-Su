@@ -22,6 +22,7 @@ const views = {
     attendance: document.getElementById("view-attendance"),
     leaves: document.getElementById("view-leaves"),
     payroll: document.getElementById("view-payroll"),
+    performance: document.getElementById("view-performance"),
 };
 
 function showView(name) {
@@ -34,6 +35,7 @@ function showView(name) {
     if (name === "attendance") loadAttendance();
     if (name === "leaves") loadLeaves();
     if (name === "payroll") loadPayroll();
+    if (name === "performance") loadPerformance();
 }
 
 tabs.forEach(tab => {
@@ -288,6 +290,69 @@ payTableBody.addEventListener("click", (e) => {
             alert("Không tải được phiếu lương");
         });
 });
+
+// ====== PERFORMANCE REVIEWS (ĐÁNH GIÁ) ======
+const perfSummaryCard = document.getElementById("perfSummaryCard");
+const perfTableBody = document.querySelector("#perfTable tbody");
+
+async function loadPerformance() {
+    if (!perfSummaryCard || !perfTableBody) return;
+
+    if (!employeeId) {
+        perfSummaryCard.innerHTML = `<p>Chưa gắn Employee ID cho tài khoản này.</p>`;
+        perfTableBody.innerHTML = "";
+        return;
+    }
+
+    try {
+        // với role employee: backend tự filter theo current_user.employee_id
+        const data = await apiGet("/performance-reviews");
+
+        // Nếu không có đánh giá nào
+        if (!data || data.length === 0) {
+            perfSummaryCard.innerHTML = `
+                <p>Hiện tại bạn chưa có đánh giá hiệu suất nào.</p>
+            `;
+            perfTableBody.innerHTML = "";
+            return;
+        }
+
+        // Lấy review mới nhất (backend đã order created_at DESC)
+        const latest = data[0];
+
+        // Tính điểm trung bình
+        const avg =
+            data.reduce((sum, r) => sum + (r.score || 0), 0) / data.length;
+
+        perfSummaryCard.innerHTML = `
+            <p><strong>Kỳ đánh giá gần nhất:</strong> ${latest.period}</p>
+            <p><strong>Điểm kỳ gần nhất:</strong> ${latest.score}/5</p>
+            <p><strong>Điểm kỳ gần nhất:</strong> ${"⭐".repeat(latest.score)}${"☆".repeat(5 - latest.score)}</p>
+            <p><strong>Tóm tắt:</strong> ${latest.summary || "Không có mô tả"}</p>
+        `;
+
+        // render bảng lịch sử
+        perfTableBody.innerHTML = "";
+        data.forEach(r => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${r.period}</td>
+                <td>${"⭐".repeat(r.score)}${"☆".repeat(5 - r.score)}</td>
+                <td>${r.summary || ""}</td>
+                <td>${r.strengths || ""}</td>
+                <td>${r.improvements || ""}</td>
+                <td>${r.created_at ? new Date(r.created_at).toLocaleString("vi-VN") : ""}</td>
+            `;
+            perfTableBody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error(err);
+        perfSummaryCard.innerHTML = `<p>Không tải được dữ liệu đánh giá. Vui lòng thử lại sau.</p>`;
+        perfTableBody.innerHTML = "";
+        alert("Không tải được dữ liệu đánh giá hiệu suất");
+    }
+}
+
 
 // ====== INIT ======
 showView("profile");
