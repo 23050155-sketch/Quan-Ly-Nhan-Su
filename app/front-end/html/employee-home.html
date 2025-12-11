@@ -21,6 +21,7 @@
         <button class="tab" data-view="attendance">Chấm công</button>
         <button class="tab" data-view="leaves">Xin nghỉ phép</button>
         <button class="tab" data-view="payroll">Lương</button>
+        <button class="tab" data-view="compliance">Compliance</button>
         <button class="tab" data-view="performance">Đánh giá</button>
     </nav>
 
@@ -150,6 +151,27 @@
                 </tr>
                 </thead>
                 <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- COMPLIANCE -->
+        <section id="view-compliance" class="view">
+            <h2>Chính sách & quy định</h2>
+            <p>Vui lòng đọc và xác nhận các chính sách dưới đây.</p>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Tiêu đề</th>
+                        <th>Mã</th>
+                        <th>Ngày hiệu lực</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="myComplianceTbody">
+                    <!-- render bằng JS -->
+                </tbody>
             </table>
         </section>
 
