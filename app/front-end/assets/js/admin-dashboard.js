@@ -24,6 +24,7 @@ const views = {
     leaves: document.getElementById("view-leaves"),
     payroll: document.getElementById("view-payroll"),
     reports: document.getElementById("view-reports"),
+    performance: document.getElementById("view-performance"),
 };
 const pageTitle = document.getElementById("pageTitle");
 
@@ -63,6 +64,10 @@ function showView(name) {
         case "payroll":
             pageTitle.textContent = "Payroll";
             loadPayroll();
+            break;
+        case "performance":                         
+            pageTitle.textContent = "Performance";  
+            loadPerformance();                      
             break;
         case "reports":
             pageTitle.textContent = "Reports";
@@ -567,6 +572,142 @@ payrollFilterForm.addEventListener("submit", (e) => {
     e.preventDefault();
     loadPayroll();
 });
+
+// =====================================================================
+//                          PERFORMANCE REVIEWS
+// =====================================================================
+const performanceTableBody = document.querySelector("#performanceTable tbody");
+const performanceForm = document.getElementById("performanceForm");
+const btnReloadPerformance = document.getElementById("btnReloadPerformance");
+const btnResetPerformanceForm = document.getElementById("btnResetPerformanceForm");
+
+function resetPerformanceForm() {
+    if (!performanceForm) return;
+    performanceForm.reset();
+    const idInput = document.getElementById("perfId");
+    if (idInput) idInput.value = "";
+}
+
+async function loadPerformance() {
+    if (!performanceTableBody) return;
+
+    try {
+        const empFilter = document.getElementById("perfFilterEmployeeId")?.value;
+        const params = new URLSearchParams();
+        if (empFilter) params.append("employee_id", empFilter);
+
+        const data = await apiGet(`/performance-reviews?${params.toString()}`);
+        performanceTableBody.innerHTML = "";
+
+        data.forEach(pr => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${pr.id}</td>
+                <td>${pr.employee_id}</td>
+                <td>${pr.period}</td>
+                <td>${"⭐".repeat(pr.score)}${"☆".repeat(5 - pr.score)}</td>
+                <td>${pr.summary || ""}</td>
+                <td>${pr.created_at || ""}</td>
+                <td>
+                    <button class="btn-secondary btn-sm" data-action="edit" data-id="${pr.id}">Sửa</button>
+                    <button class="btn-secondary btn-sm" data-action="delete" data-id="${pr.id}">Xóa</button>
+                </td>
+            `;
+            performanceTableBody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error(err);
+        alert("Không tải được danh sách performance review");
+    }
+}
+
+// click edit/delete trên bảng
+if (performanceTableBody) {
+    performanceTableBody.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button");
+        if (!btn) return;
+
+        const id = btn.dataset.id;
+        const action = btn.dataset.action;
+
+        if (action === "edit") {
+            try {
+                const pr = await apiGet(`/performance-reviews/${id}`);
+                document.getElementById("perfId").value = pr.id;
+                document.getElementById("perfEmployeeId").value = pr.employee_id;
+                document.getElementById("perfPeriod").value = pr.period;
+                document.getElementById("perfScore").value = pr.score;
+                document.getElementById("perfSummary").value = pr.summary || "";
+                document.getElementById("perfStrengths").value = pr.strengths || "";
+                document.getElementById("perfImprovements").value = pr.improvements || "";
+            } catch (err) {
+                console.error(err);
+                alert("Không lấy được dữ liệu đánh giá");
+            }
+        }
+
+        if (action === "delete") {
+            if (!confirm("Xóa đánh giá này?")) return;
+            try {
+                await apiDelete(`/performance-reviews/${id}`);
+                await loadPerformance();
+            } catch (err) {
+                console.error(err);
+                alert("Không xóa được đánh giá");
+            }
+        }
+    });
+}
+
+// submit form create / update
+if (performanceForm) {
+    performanceForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const id = document.getElementById("perfId").value;
+        const payload = {
+            employee_id: Number(document.getElementById("perfEmployeeId").value),
+            period: document.getElementById("perfPeriod").value.trim(),
+            score: Number(document.getElementById("perfScore").value),
+            summary: document.getElementById("perfSummary").value.trim() || null,
+            strengths: document.getElementById("perfStrengths").value.trim() || null,
+            improvements: document.getElementById("perfImprovements").value.trim() || null,
+        };
+
+        if (!payload.employee_id || !payload.period || !payload.score) {
+            alert("Vui lòng nhập Employee ID, Period, Score");
+            return;
+        }
+
+        try {
+            if (id) {
+                await apiPut(`/performance-reviews/${id}`, payload);
+            } else {
+                await apiPost("/performance-reviews", payload);
+            }
+            resetPerformanceForm();
+            await loadPerformance();
+        } catch (err) {
+            console.error(err);
+            alert("Không lưu được performance review (check quyền admin / dữ liệu)");
+        }
+    });
+}
+
+// nút reload + reset
+if (btnReloadPerformance) {
+    btnReloadPerformance.addEventListener("click", (e) => {
+        e.preventDefault();
+        loadPerformance();
+    });
+}
+if (btnResetPerformanceForm) {
+    btnResetPerformanceForm.addEventListener("click", (e) => {
+        e.preventDefault();
+        resetPerformanceForm();
+    });
+}
+
 
 // =====================================================================
 //                              REPORTS
