@@ -1,56 +1,68 @@
+# app/main.py
+
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
-import os
+
+from dotenv import load_dotenv
 
 from app.database import Base, engine
-from app.models.employee import Employee
-from app.models.attendance import Attendance
-from app.models.leave_request import LeaveRequest
-from app.models.payroll import Payroll
-from app.models.user import User
+from app.models import employee, attendance, leave_request, payroll, user, performance_review
 
-# Routers
-from app.routers.stats import router as stats_router
-from app.routers import reports
-from app.routers import auth
-from app.routers import dashboard
-from app.routers import users
-
+from app.routers import auth, reports, dashboard
 from app.routers.employee import router as employee_router
 from app.routers.attendance import router as attendance_router
 from app.routers.leave_request import router as leave_router
 from app.routers.payroll import router as payroll_router
+from app.routers.stats import router as stats_router
+from app.routers.users import router as users_router
+from app.routers.performance_review import router as performance_review_router
 
-# Tạo bảng MySQL nếu chưa có
+
+
+# ====== LOAD ENV (SMTP_USER, SMTP_PASSWORD, ...) ======
+load_dotenv()
+
+
+# ====== TẠO APP ======
+app = FastAPI(title="HR Employee Management", version="1.0.0")
+
+# Tạo bảng trong DB (do đã import models ở trên)
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="HR Employee Management API")
 
-# --- CORS ---
+# ====== CORS (cho frontend chạy cùng origin) ======
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],          # cần chặt hơn thì sửa lại origin cụ thể
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# STATIC FILES
+
+# ====== STATIC FILES (HTML + CSS/JS) ======
 BASE_DIR = Path(__file__).resolve().parent
-FRONTEND_DIR = BASE_DIR / "frontend"
+FRONTEND_DIR = BASE_DIR / "front-end"
 
-# Debug
-print(">>> USING STATIC FOLDER:", FRONTEND_DIR)
-
+# /assets/... -> app/front-end/assets/...
 app.mount(
-    "/frontend",
-    StaticFiles(directory=str(FRONTEND_DIR), html=True),
-    name="frontend",
+    "/assets",
+    StaticFiles(directory=FRONTEND_DIR / "assets"),
+    name="assets",
 )
 
-# --- ROUTERS ---
+# /html/... -> app/front-end/html/...
+app.mount(
+    "/html",
+    StaticFiles(directory=FRONTEND_DIR / "html"),
+    name="html",
+)
+
+
+# ====== ROUTERS API ======
 app.include_router(auth.router)
 app.include_router(employee_router)
 app.include_router(attendance_router)
@@ -59,9 +71,12 @@ app.include_router(payroll_router)
 app.include_router(stats_router)
 app.include_router(reports.router)
 app.include_router(dashboard.router)
-app.include_router(users.router)
+app.include_router(users_router)
+app.include_router(performance_review_router)
 
 
+
+# ====== HEALTH CHECK ======
 @app.get("/")
 def root():
-    return {"status": "OK", "message": "HR API is running!"}
+    return {"status": "OK", "message": "HR API is running"}
