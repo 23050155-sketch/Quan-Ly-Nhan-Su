@@ -83,9 +83,9 @@ def send_leave_status_email(
         return
 
     if status == "approved":
-        status_text = "được CHẤP THUẬN ✅"
+        status_text = "được chấp thuận ✅"
     elif status == "rejected":
-        status_text = "bị TỪ CHỐI ❌"
+        status_text = "bị từ chối ❌"
     else:
         status_text = f"chuyển sang trạng thái: {status}"
 
