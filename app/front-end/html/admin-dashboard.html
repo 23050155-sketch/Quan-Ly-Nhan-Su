@@ -307,6 +307,74 @@
             </table>
         </section>
 
+        <!-- PERFORMANCE VIEW -->
+        <section id="view-performance" class="view">
+            <div class="section-header">
+                <h2>Performance Reviews</h2>
+                <div style="display:flex; gap:8px; align-items:flex-end;">
+                    <div>
+                        <label>Filter Employee ID</label>
+                        <input type="number" id="perfFilterEmployeeId" placeholder="Để trống = tất cả">
+                    </div>
+                    <button id="btnReloadPerformance" class="btn-secondary">Reload</button>
+                </div>
+            </div>
+
+            <form id="performanceForm" class="form-grid">
+                <input type="hidden" id="perfId">
+
+                <div>
+                    <label>Employee ID</label>
+                    <input type="number" id="perfEmployeeId" required>
+                </div>
+
+                <div>
+                    <label>Period</label>
+                    <input type="text" id="perfPeriod" placeholder="VD: 2025-Q1" required>
+                </div>
+
+                <div>
+                    <label>Score (1-5)</label>
+                    <input type="number" id="perfScore" min="1" max="5" required>
+                </div>
+
+                <div>
+                    <label>Summary</label>
+                    <input type="text" id="perfSummary">
+                </div>
+
+                <div>
+                    <label>Strengths</label>
+                    <input type="text" id="perfStrengths">
+                </div>
+
+                <div>
+                    <label>Improvements</label>
+                    <input type="text" id="perfImprovements">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Lưu đánh giá</button>
+                    <button type="button" class="btn-secondary" id="btnResetPerformanceForm">Reset</button>
+                </div>
+            </form>
+
+            <table class="table" id="performanceTable">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Emp ID</th>
+                    <th>Period</th>
+                    <th>Score</th>
+                    <th>Summary</th>
+                    <th>Created at</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
         <!-- REPORTS VIEW -->
         <section id="view-reports" class="view">
             <div class="section-header">
