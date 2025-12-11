@@ -25,6 +25,7 @@ const views = {
     payroll: document.getElementById("view-payroll"),
     reports: document.getElementById("view-reports"),
     performance: document.getElementById("view-performance"),
+    compliance: document.getElementById("view-compliance"),
 };
 const pageTitle = document.getElementById("pageTitle");
 
@@ -73,6 +74,10 @@ function showView(name) {
             pageTitle.textContent = "Reports";
             loadAttendanceChart(); // load chart khi mở tab Reports
             break;
+        case "compliance":
+            pageTitle.textContent = "Compliance Policies";
+            loadCompliancePolicies();
+            break;  
     }
 }
 
@@ -830,6 +835,103 @@ if (attendanceChartForm) {
         loadAttendanceChart();
     });
 }
+
+
+
+// ====== COMPLIANCE – ADMIN ======
+
+const complianceTbody = document.getElementById("compliancePoliciesTbody");
+const complianceForm = document.getElementById("complianceCreateForm");
+
+async function loadCompliancePolicies() {
+    if (!complianceTbody) return;
+
+    complianceTbody.innerHTML = `<tr><td colspan="6">Đang tải...</td></tr>`;
+    try {
+        const policies = await apiGet("/compliance/policies");
+        if (!policies.length) {
+            complianceTbody.innerHTML = `<tr><td colspan="6">Chưa có policy nào</td></tr>`;
+            return;
+        }
+
+        complianceTbody.innerHTML = "";
+        policies.forEach((p) => {
+            const tr = document.createElement("tr");
+
+            const statusText = p.is_active ? "Đang hiệu lực" : "Ngưng";
+            const effectiveDate = p.effective_date ?? "";
+            const createdAt = p.created_at
+                ? new Date(p.created_at).toLocaleString("vi-VN")
+                : "";
+
+            tr.innerHTML = `
+                <td>${p.title}</td>
+                <td>${p.code || ""}</td>
+                <td>${effectiveDate}</td>
+                <td>${statusText}</td>
+                <td>${createdAt}</td>
+                <td>
+                    <button class="btn-small btn-danger" data-action="delete" data-id="${p.id}">Xóa</button>
+                </td>
+            `;
+
+            complianceTbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error(err);
+        complianceTbody.innerHTML = `<tr><td colspan="6">Lỗi tải policy</td></tr>`;
+    }
+}
+
+if (complianceForm) {
+    complianceForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const payload = {
+            title: document.getElementById("compTitle").value.trim(),
+            code: document.getElementById("compCode").value.trim() || null,
+            effective_date: document.getElementById("compEffectiveDate").value,
+            description: document.getElementById("compDescription").value.trim() || null,
+            is_active: document.getElementById("compIsActive").checked,
+        };
+
+        if (!payload.title || !payload.effective_date) {
+            alert("Vui lòng nhập tiêu đề và ngày hiệu lực");
+            return;
+        }
+
+        try {
+            await apiPost("/compliance/policies", payload);
+            complianceForm.reset();
+            document.getElementById("compIsActive").checked = true;
+            await loadCompliancePolicies();
+            alert("Tạo policy thành công");
+        } catch (err) {
+            console.error(err);
+            alert("Lỗi tạo policy: " + err.message);
+        }
+    });
+}
+
+if (complianceTbody) {
+    complianceTbody.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-action]");
+        if (!btn) return;
+        const id = btn.getAttribute("data-id");
+        const action = btn.getAttribute("data-action");
+
+        if (action === "delete") {
+            if (!confirm("Xóa policy này?")) return;
+            try {
+                await apiDelete(`/compliance/policies/${id}`);
+                await loadCompliancePolicies();
+            } catch (err) {
+                console.error(err);
+                alert("Lỗi xóa policy: " + err.message);
+            }
+        }
+    });
+}
+
 
 // =====================================================================
 //                              INIT
