@@ -216,5 +216,27 @@
 
 <script src="../assets/js/config.js"></script>
 <script src="../assets/js/employee-home.js" defer></script>
+
+    <!-- COMPLIANCE MODAL (EMPLOYEE) -->
+    <div id="complianceModal" class="modal-overlay" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="compModalTitle">
+            <div class="modal-header">
+                <h3 id="compModalTitle">Compliance</h3>
+                <button type="button" class="modal-close" id="compModalClose" aria-label="Đóng">×</button>
+            </div>
+
+            <div class="modal-meta" id="compModalMeta"></div>
+
+            <div class="modal-body">
+                <div id="compModalDesc" class="policy-content"></div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="compModalClose2">Đóng</button>
+                <button type="button" class="btn-primary" id="compModalAckBtn">Xác nhận đã đọc</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

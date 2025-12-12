@@ -357,12 +357,73 @@ async function loadPerformance() {
 // ====== COMPLIANCE – EMPLOYEE ======
 const myComplianceTbody = document.getElementById("myComplianceTbody");
 
+// modal elements
+const complianceModal = document.getElementById("complianceModal");
+const compModalTitle = document.getElementById("compModalTitle");
+const compModalMeta = document.getElementById("compModalMeta");
+const compModalDesc = document.getElementById("compModalDesc");
+const compModalAckBtn = document.getElementById("compModalAckBtn");
+const compModalClose = document.getElementById("compModalClose");
+const compModalClose2 = document.getElementById("compModalClose2");
+
+let compliancePolicyMap = new Map(); // id -> policy
+let currentPolicyId = null;
+
+function openComplianceModal(policy) {
+    if (!complianceModal) return;
+
+    currentPolicyId = policy.id;
+
+    compModalTitle.textContent = policy.title || "Compliance Policy";
+
+    const code = policy.code ? `• Mã: ${policy.code}` : "";
+    const eff = policy.effective_date ? `• Hiệu lực: ${policy.effective_date}` : "";
+    const status = policy.is_acknowledged
+        ? `• Trạng thái: Đã xác nhận${policy.acknowledged_at ? " (" + new Date(policy.acknowledged_at).toLocaleString("vi-VN") + ")" : ""}`
+        : "• Trạng thái: Chưa xác nhận";
+
+    compModalMeta.textContent = [code, eff, status].filter(Boolean).join("  ");
+
+    // description có thể null
+    const desc = (policy.description || "").trim();
+    compModalDesc.textContent = desc || "Policy này chưa có nội dung mô tả.";
+
+    // nút xác nhận chỉ hiện khi chưa ack
+    if (compModalAckBtn) compModalAckBtn.style.display = policy.is_acknowledged ? "none" : "inline-flex";
+
+    complianceModal.classList.add("show");
+    complianceModal.setAttribute("aria-hidden", "false");
+}
+
+function closeComplianceModal() {
+    if (!complianceModal) return;
+    complianceModal.classList.remove("show");
+    complianceModal.setAttribute("aria-hidden", "true");
+    currentPolicyId = null;
+}
+
+if (compModalClose) compModalClose.addEventListener("click", closeComplianceModal);
+if (compModalClose2) compModalClose2.addEventListener("click", closeComplianceModal);
+
+// click vào nền để đóng
+if (complianceModal) {
+    complianceModal.addEventListener("click", (e) => {
+        if (e.target === complianceModal) closeComplianceModal();
+    });
+}
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeComplianceModal();
+});
+
 async function loadCompliance() {
     if (!myComplianceTbody) return;
 
     myComplianceTbody.innerHTML = `<tr><td colspan="5">Đang tải...</td></tr>`;
     try {
         const policies = await apiGet("/compliance/my-policies");
+        compliancePolicyMap = new Map((policies || []).map(p => [p.id, p]));
+
         if (!policies.length) {
             myComplianceTbody.innerHTML = `<tr><td colspan="5">Hiện chưa có chính sách nào.</td></tr>`;
             return;
@@ -372,26 +433,27 @@ async function loadCompliance() {
         policies.forEach((p) => {
             const tr = document.createElement("tr");
             const effectiveDate = p.effective_date || "";
-            let statusText = "";
-            let actionHtml = "";
 
-            if (p.is_acknowledged) {
-                statusText = "Đã xác nhận";
-                const t = p.acknowledged_at
-                    ? new Date(p.acknowledged_at).toLocaleString("vi-VN")
-                    : "";
-                actionHtml = `<span class="badge-success">Đã đọc lúc ${t}</span>`;
-            } else {
-                statusText = "Chưa xác nhận";
-                actionHtml = `<button class="btn-small" data-action="ack" data-id="${p.id}">Đã đọc</button>`;
-            }
+            let statusText = p.is_acknowledged ? "Đã xác nhận" : "Chưa xác nhận";
+
+            // action: luôn có "Xem nội dung"
+            // nếu chưa ack → thêm nút "Xác nhận"
+            const viewBtn = `<button class="btn-small" data-action="view" data-id="${p.id}">Xem nội dung</button>`;
+            const ackBtn = p.is_acknowledged
+                ? (p.acknowledged_at
+                    ? `<span class="badge-success">Đã đọc • ${new Date(p.acknowledged_at).toLocaleString("vi-VN")}</span>`
+                    : `<span class="badge-success">Đã đọc</span>`)
+                : `<button class="btn-small" data-action="ack" data-id="${p.id}">Xác nhận</button>`;
 
             tr.innerHTML = `
                 <td>${p.title}</td>
                 <td>${p.code || ""}</td>
                 <td>${effectiveDate}</td>
                 <td>${statusText}</td>
-                <td>${actionHtml}</td>
+                <td style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    ${viewBtn}
+                    ${ackBtn}
+                </td>
             `;
             myComplianceTbody.appendChild(tr);
         });
@@ -401,16 +463,50 @@ async function loadCompliance() {
     }
 }
 
+async function acknowledgePolicy(policyId) {
+    await apiPost(`/compliance/policies/${policyId}/acknowledge`, {});
+    await loadCompliance();
+
+    // nếu đang mở modal thì refresh nội dung + ẩn nút ack
+    const updated = compliancePolicyMap.get(Number(policyId));
+    if (updated && currentPolicyId === Number(policyId)) {
+        openComplianceModal(updated);
+    }
+}
+
 if (myComplianceTbody) {
     myComplianceTbody.addEventListener("click", async (e) => {
-        const btn = e.target.closest("button[data-action='ack']");
+        const btn = e.target.closest("button[data-action]");
         if (!btn) return;
 
-        const id = btn.getAttribute("data-id");
+        const id = Number(btn.getAttribute("data-id"));
+        const action = btn.getAttribute("data-action");
+
+        if (action === "view") {
+            const policy = compliancePolicyMap.get(id);
+            if (policy) openComplianceModal(policy);
+            return;
+        }
+
+        if (action === "ack") {
+            try {
+                await acknowledgePolicy(id);
+                alert("Okela, bạn đã xác nhận policy này rồi nha.");
+            } catch (err) {
+                console.error(err);
+                alert("Lỗi xác nhận policy: " + err.message);
+            }
+        }
+    });
+}
+
+// nút ack trong modal
+if (compModalAckBtn) {
+    compModalAckBtn.addEventListener("click", async () => {
+        if (!currentPolicyId) return;
         try {
-            await apiPost(`/compliance/policies/${id}/acknowledge`, {});
-            await loadCompliance();
-            alert("Đã xác nhận policy.");
+            await acknowledgePolicy(currentPolicyId);
+            alert("Okela, xác nhận xong!");
         } catch (err) {
             console.error(err);
             alert("Lỗi xác nhận policy: " + err.message);
@@ -419,8 +515,8 @@ if (myComplianceTbody) {
 }
 
 
-
 // ================= EMPLOYEE ATTENDANCE HEATMAP =================
+
 
 function initHeatmapDate() {
     const now = new Date();
