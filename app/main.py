@@ -1,17 +1,31 @@
 # app/main.py
+# app/main.py
+from app.core.security import get_password_hash
 
 from pathlib import Path
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from dotenv import load_dotenv
+from passlib.context import CryptContext
 
-from app.database import Base, engine
-from app.models import employee, attendance, leave_request, payroll, user, performance_review, compliance
+from app.database import Base, engine, SessionLocal
+from app.models import (
+    employee,
+    attendance,
+    leave_request,
+    payroll,
+    user,
+    performance_review,
+    compliance,
+)
 
-from app.routers import auth, reports, dashboard, compliance as compliance_router_module
+from app.models.user import User
+
+from app.routers import auth, reports, dashboard
 from app.routers.employee import router as employee_router
 from app.routers.attendance import router as attendance_router
 from app.routers.leave_request import router as leave_router
@@ -22,40 +36,83 @@ from app.routers.performance_review import router as performance_review_router
 from app.routers.compliance import router as compliance_router
 
 
-
-# ====== LOAD ENV (SMTP_USER, SMTP_PASSWORD, ...) ======
+# ====== LOAD ENV ======
 load_dotenv()
+
+# ====== PASSWORD HASH ======
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+
+# ====== SEED DEFAULT USER ======
+def seed_default_admin():
+    db = SessionLocal()
+    try:
+        username = os.getenv("DEFAULT_ADMIN_USERNAME", "admin")
+        password = os.getenv("DEFAULT_ADMIN_PASSWORD", "admin123")
+        email = os.getenv("DEFAULT_ADMIN_EMAIL", "admin@company.local")
+
+
+        existed = db.query(User).filter(User.username == username).first()
+        if existed:
+            return
+
+        admin = User(
+            username=username,
+            role="admin",
+            email=email,
+            employee_id=None,
+            password_hash = get_password_hash(password)
+        )
+
+
+        db.add(admin)
+        db.commit()
+        print(f"✅ Seeded default admin: {username}")
+
+    except Exception as e:
+        db.rollback()
+        print("❌ Seed admin failed:", e)
+    finally:
+        db.close()
 
 
 # ====== TẠO APP ======
 app = FastAPI(title="HR Employee Management", version="1.0.0")
 
-# Tạo bảng trong DB (do đã import models ở trên)
+# Tạo bảng
 Base.metadata.create_all(bind=engine)
 
 
-# ====== CORS (cho frontend chạy cùng origin) ======
+# ====== RUN SEED KHI START APP ======
+@app.on_event("startup")
+def on_startup():
+    seed_default_admin()
+
+
+# ====== CORS ======
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],          # cần chặt hơn thì sửa lại origin cụ thể
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# ====== STATIC FILES (HTML + CSS/JS) ======
+# ====== STATIC FILES ======
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = BASE_DIR / "front-end"
 
-# /assets/... -> app/front-end/assets/...
 app.mount(
     "/assets",
     StaticFiles(directory=FRONTEND_DIR / "assets"),
     name="assets",
 )
 
-# /html/... -> app/front-end/html/...
 app.mount(
     "/html",
     StaticFiles(directory=FRONTEND_DIR / "html"),
@@ -63,7 +120,7 @@ app.mount(
 )
 
 
-# ====== ROUTERS API ======
+# ====== ROUTERS ======
 app.include_router(auth.router)
 app.include_router(employee_router)
 app.include_router(attendance_router)
@@ -75,7 +132,6 @@ app.include_router(dashboard.router)
 app.include_router(users_router)
 app.include_router(performance_review_router)
 app.include_router(compliance_router)
-
 
 
 # ====== HEALTH CHECK ======
