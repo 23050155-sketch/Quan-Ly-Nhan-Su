@@ -952,40 +952,20 @@ function statusLabel(s) {
 function renderHeatmap(days, year, month) {
     heatmapWrap.innerHTML = "";
 
-    // header weekday row (optional mini vibe)
     const grid = document.createElement("div");
     grid.className = "heatmap-grid";
 
-    // weekday labels (Mon->Sun)
-    const weekdayRow = ["M", "T", "W", "T", "F", "S", "S"];
-    weekdayRow.forEach((w) => {
-        const cell = document.createElement("div");
-        cell.className = "heatmap-cell empty";
-        cell.style.height = "14px";
-        cell.style.width = "18px";
-        cell.style.fontSize = "10px";
-        cell.style.color = "#6b7280";
-        cell.style.display = "flex";
-        cell.style.alignItems = "center";
-        cell.style.justifyContent = "center";
-        cell.textContent = w;
-        grid.appendChild(cell);
-    });
-
-    // compute padding
+    // tính padding đầu tháng (Mon-first)
     const first = new Date(year, month - 1, 1);
-    // JS: 0=Sun..6=Sat -> convert to Mon-first
-    let jsDow = first.getDay(); // 0 Sun
-    let pad = (jsDow === 0) ? 6 : (jsDow - 1); // Mon=0..Sun=6
+    const jsDow = first.getDay(); // 0=Sun
+    const pad = jsDow === 0 ? 6 : jsDow - 1;
 
-    // add empty pads
     for (let i = 0; i < pad; i++) {
         const empty = document.createElement("div");
         empty.className = "heatmap-cell empty";
         grid.appendChild(empty);
     }
 
-    // add real days
     days.forEach((d) => {
         const cell = document.createElement("div");
         cell.className = `heatmap-cell ${d.status}`;
@@ -1000,6 +980,7 @@ function renderHeatmap(days, year, month) {
 
     heatmapWrap.appendChild(grid);
 }
+
 
 async function loadAttendanceHeatmap() {
     try {

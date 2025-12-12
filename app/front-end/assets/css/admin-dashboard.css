@@ -304,6 +304,7 @@ body {
 
 /* ô ngày to hơn */
 .heatmap-cell{
+  position: relative;
   width:40px;
   height:40px;
   border-radius:12px;
@@ -348,3 +349,17 @@ body {
 
 
 
+/* ===== ADMIN WEEKDAYS HEADER TOP (T2-CN) ===== */
+.heatmap-weekdays.admin{
+  display:grid;
+  grid-template-columns: repeat(7, 40px); /* phải khớp heatmap-grid 40px */
+  gap:14px;                                /* phải khớp gap */
+  justify-content:center;
+  margin: 10px auto 8px;
+  font-size:12px;
+  color:#6b7280;
+  user-select:none;
+}
+.heatmap-weekdays.admin span{
+  text-align:center;
+}
