@@ -77,7 +77,7 @@ function showView(name) {
         case "compliance":
             pageTitle.textContent = "Compliance Policies";
             loadCompliancePolicies();
-            break;  
+            break;
     }
 }
 
@@ -835,7 +835,6 @@ if (attendanceChartForm) {
         loadAttendanceChart();
     });
 }
-
 
 
 // ====== COMPLIANCE – ADMIN ======

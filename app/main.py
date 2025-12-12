@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from app.database import Base, engine
 from app.models import employee, attendance, leave_request, payroll, user, performance_review, compliance
 
-from app.routers import auth, reports, dashboard, compliance
+from app.routers import auth, reports, dashboard, compliance as compliance_router_module
 from app.routers.employee import router as employee_router
 from app.routers.attendance import router as attendance_router
 from app.routers.leave_request import router as leave_router
@@ -19,6 +19,7 @@ from app.routers.payroll import router as payroll_router
 from app.routers.stats import router as stats_router
 from app.routers.users import router as users_router
 from app.routers.performance_review import router as performance_review_router
+from app.routers.compliance import router as compliance_router
 
 
 

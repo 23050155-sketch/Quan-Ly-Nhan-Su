@@ -23,10 +23,12 @@ const views = {
     leaves: document.getElementById("view-leaves"),
     payroll: document.getElementById("view-payroll"),
     performance: document.getElementById("view-performance"),
+    // 🔥 THÊM COMPLIANCE VIEW
+    compliance: document.getElementById("view-compliance"),
 };
 
 function showView(name) {
-    tabs.forEach(t => t.classList.toggle("active", t.dataset.view === name));
+    tabs.forEach((t) => t.classList.toggle("active", t.dataset.view === name));
     Object.entries(views).forEach(([k, el]) => {
         if (el) el.classList.toggle("active", k === name);
     });
@@ -36,9 +38,10 @@ function showView(name) {
     if (name === "leaves") loadLeaves();
     if (name === "payroll") loadPayroll();
     if (name === "performance") loadPerformance();
+    if (name === "compliance") loadCompliance(); // 🔥 gọi Compliance
 }
 
-tabs.forEach(tab => {
+tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
         const name = tab.dataset.view;
         showView(name);
@@ -55,7 +58,7 @@ document.getElementById("btnLogout").addEventListener("click", () => {
 async function apiGet(path) {
     const res = await fetch(`${API_BASE_URL}${path}`, {
         headers: {
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
         },
     });
     if (!res.ok) {
@@ -69,7 +72,7 @@ async function apiPost(path, body) {
     const res = await fetch(`${API_BASE_URL}${path}`, {
         method: "POST",
         headers: {
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
@@ -78,6 +81,8 @@ async function apiPost(path, body) {
         const text = await res.text();
         throw new Error(text || `POST ${path} failed`);
     }
+    // với acknowledge policy API trả 204 → không có body
+    if (res.status === 204) return;
     return res.json();
 }
 
@@ -117,13 +122,12 @@ async function loadAttendance() {
         const toDate = document.getElementById("attToDate").value;
 
         const params = new URLSearchParams();
-        // nếu backend yêu cầu employee_id thì thêm vô:
         if (employeeId) params.append("employee_id", employeeId);
 
         const data = await apiGet(`/attendances?${params.toString()}`);
 
         attTableBody.innerHTML = "";
-        data.forEach(a => {
+        data.forEach((a) => {
             // filter theo ngày nếu có chọn
             if (fromDate && a.date < fromDate) return;
             if (toDate && a.date > toDate) return;
@@ -153,13 +157,12 @@ const leavesTableBody = document.querySelector("#leavesTable tbody");
 
 async function loadLeaves() {
     try {
-        // gọi luôn kèm employee_id cho chắc
         const params = new URLSearchParams();
         if (employeeId) params.append("employee_id", employeeId);
 
         const data = await apiGet(`/leaves?${params.toString()}`);
         leavesTableBody.innerHTML = "";
-        data.forEach(l => {
+        data.forEach((l) => {
             const period = `${l.start_date} → ${l.end_date}`;
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -192,7 +195,7 @@ leaveCreateForm.addEventListener("submit", async (e) => {
 
     try {
         await apiPost("/leaves", {
-            employee_id: employeeId,   // ✅ gửi kèm employee_id
+            employee_id: employeeId,
             start_date: start,
             end_date: end,
             reason: reason || null,
@@ -223,7 +226,7 @@ async function loadPayroll() {
         const data = await apiGet(`/payrolls?${params.toString()}`);
 
         payTableBody.innerHTML = "";
-        data.forEach(p => {
+        data.forEach((p) => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${p.month}/${p.year}</td>
@@ -268,14 +271,14 @@ payTableBody.addEventListener("click", (e) => {
 
     fetch(url, {
         headers: {
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
         },
     })
-        .then(res => {
+        .then((res) => {
             if (!res.ok) throw new Error("Download error");
             return res.blob();
         })
-        .then(blob => {
+        .then((blob) => {
             const link = document.createElement("a");
             const fileUrl = URL.createObjectURL(blob);
             link.href = fileUrl;
@@ -285,7 +288,7 @@ payTableBody.addEventListener("click", (e) => {
             link.remove();
             URL.revokeObjectURL(fileUrl);
         })
-        .catch(err => {
+        .catch((err) => {
             console.error(err);
             alert("Không tải được phiếu lương");
         });
@@ -305,10 +308,8 @@ async function loadPerformance() {
     }
 
     try {
-        // với role employee: backend tự filter theo current_user.employee_id
         const data = await apiGet("/performance-reviews");
 
-        // Nếu không có đánh giá nào
         if (!data || data.length === 0) {
             perfSummaryCard.innerHTML = `
                 <p>Hiện tại bạn chưa có đánh giá hiệu suất nào.</p>
@@ -317,23 +318,19 @@ async function loadPerformance() {
             return;
         }
 
-        // Lấy review mới nhất (backend đã order created_at DESC)
         const latest = data[0];
-
-        // Tính điểm trung bình
         const avg =
             data.reduce((sum, r) => sum + (r.score || 0), 0) / data.length;
 
         perfSummaryCard.innerHTML = `
             <p><strong>Kỳ đánh giá gần nhất:</strong> ${latest.period}</p>
             <p><strong>Điểm kỳ gần nhất:</strong> ${latest.score}/5</p>
-            <p><strong>Điểm kỳ gần nhất:</strong> ${"⭐".repeat(latest.score)}${"☆".repeat(5 - latest.score)}</p>
+            <p><strong>Đánh giá sao:</strong> ${"⭐".repeat(latest.score)}${"☆".repeat(5 - latest.score)}</p>
             <p><strong>Tóm tắt:</strong> ${latest.summary || "Không có mô tả"}</p>
         `;
 
-        // render bảng lịch sử
         perfTableBody.innerHTML = "";
-        data.forEach(r => {
+        data.forEach((r) => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${r.period}</td>
@@ -341,7 +338,11 @@ async function loadPerformance() {
                 <td>${r.summary || ""}</td>
                 <td>${r.strengths || ""}</td>
                 <td>${r.improvements || ""}</td>
-                <td>${r.created_at ? new Date(r.created_at).toLocaleString("vi-VN") : ""}</td>
+                <td>${
+                    r.created_at
+                        ? new Date(r.created_at).toLocaleString("vi-VN")
+                        : ""
+                }</td>
             `;
             perfTableBody.appendChild(tr);
         });
@@ -353,6 +354,69 @@ async function loadPerformance() {
     }
 }
 
+// ====== COMPLIANCE – EMPLOYEE ======
+const myComplianceTbody = document.getElementById("myComplianceTbody");
+
+async function loadCompliance() {
+    if (!myComplianceTbody) return;
+
+    myComplianceTbody.innerHTML = `<tr><td colspan="5">Đang tải...</td></tr>`;
+    try {
+        const policies = await apiGet("/compliance/my-policies");
+        if (!policies.length) {
+            myComplianceTbody.innerHTML = `<tr><td colspan="5">Hiện chưa có chính sách nào.</td></tr>`;
+            return;
+        }
+
+        myComplianceTbody.innerHTML = "";
+        policies.forEach((p) => {
+            const tr = document.createElement("tr");
+            const effectiveDate = p.effective_date || "";
+            let statusText = "";
+            let actionHtml = "";
+
+            if (p.is_acknowledged) {
+                statusText = "Đã xác nhận";
+                const t = p.acknowledged_at
+                    ? new Date(p.acknowledged_at).toLocaleString("vi-VN")
+                    : "";
+                actionHtml = `<span class="badge-success">Đã đọc lúc ${t}</span>`;
+            } else {
+                statusText = "Chưa xác nhận";
+                actionHtml = `<button class="btn-small" data-action="ack" data-id="${p.id}">Đã đọc</button>`;
+            }
+
+            tr.innerHTML = `
+                <td>${p.title}</td>
+                <td>${p.code || ""}</td>
+                <td>${effectiveDate}</td>
+                <td>${statusText}</td>
+                <td>${actionHtml}</td>
+            `;
+            myComplianceTbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error(err);
+        myComplianceTbody.innerHTML = `<tr><td colspan="5">Lỗi tải danh sách policy</td></tr>`;
+    }
+}
+
+if (myComplianceTbody) {
+    myComplianceTbody.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-action='ack']");
+        if (!btn) return;
+
+        const id = btn.getAttribute("data-id");
+        try {
+            await apiPost(`/compliance/policies/${id}/acknowledge`, {});
+            await loadCompliance();
+            alert("Đã xác nhận policy.");
+        } catch (err) {
+            console.error(err);
+            alert("Lỗi xác nhận policy: " + err.message);
+        }
+    });
+}
 
 // ====== INIT ======
 showView("profile");
