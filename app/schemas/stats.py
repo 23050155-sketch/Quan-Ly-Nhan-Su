@@ -30,3 +30,17 @@ class LeaveSummary(BaseModel):
     year: int
     month: int
     items: List[LeaveSummaryItem]
+    
+    
+# ====== Attendance Heatmap (Admin) ======
+class AttendanceHeatmapDay(BaseModel):
+    date: date
+    status: str  # present | paid_leave | absent_unexcused | weekend | future
+
+
+class AttendanceHeatmap(BaseModel):
+    employee_id: int
+    year: int
+    month: int
+    days: List[AttendanceHeatmapDay]
+

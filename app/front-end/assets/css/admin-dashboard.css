@@ -249,3 +249,102 @@ body {
 .chart-container canvas {
     max-height: 320px;
 }
+
+
+
+/* ===== Attendance Heatmap - FIX FULL ===== */
+
+.heatmap-legend{
+  display:flex !important;
+  gap:14px !important;
+  flex-wrap:wrap !important;
+  align-items:center !important;
+  margin: 10px 0 6px !important;
+  color:#374151 !important;
+  font-size: 13px !important;
+}
+
+.legend-item{
+  display:flex !important;
+  align-items:center !important;
+  gap:8px !important;
+}
+
+.legend-box{
+  width:16px !important;
+  height:16px !important;
+  border-radius:4px !important;
+  display:inline-block !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
+}
+
+/* ✅ legend màu (quan trọng) */
+.legend-box.present{ background:#22c55e !important; }
+.legend-box.paid_leave{ background:#facc15 !important; }
+.legend-box.absent_unexcused{ background:#ef4444 !important; }
+.legend-box.weekend{ background:#e5e7eb !important; }
+.legend-box.future{ background:#f3f4f6 !important; }
+
+.heatmap-wrap{
+  margin: 20px auto !important;   /* auto => canh giữa */
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 820px;               /* 👈 kiểm soát độ rộng */
+}
+
+/* grid to hơn */
+.heatmap-grid{
+  display:grid;
+  grid-template-columns: repeat(7, 40px);  /* 28px -> 40px */
+  gap: 14px;                                /* giãn ra */
+  justify-content: center;                  /* canh giữa grid */
+}
+
+/* ô ngày to hơn */
+.heatmap-cell{
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  border: 1px solid rgba(0,0,0,0.08);
+  cursor:pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* hover cho "đã mắt" */
+.heatmap-cell:hover{
+  transform: scale(1.12);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  z-index: 5;
+}
+
+/* ✅ màu cell */
+.heatmap-cell.present{ background:#22c55e !important; }
+.heatmap-cell.paid_leave{ background:#facc15 !important; }
+.heatmap-cell.absent_unexcused{ background:#ef4444 !important; }
+.heatmap-cell.weekend{ background:#e5e7eb !important; }
+.heatmap-cell.future{ background:#f3f4f6 !important; }
+
+/* ✅ tooltip phải ẩn đi, hover mới hiện */
+.heatmap-tooltip{
+  position:absolute !important;
+  top:-42px !important;
+  left:50% !important;
+  transform: translateX(-50%) !important;
+  background:#111827 !important;
+  color:#fff !important;
+  padding:6px 8px !important;
+  font-size:12px !important;
+  border-radius:8px !important;
+  white-space:nowrap !important;
+  display:none !important;
+  z-index: 999 !important;
+}
+
+.heatmap-cell:hover .heatmap-tooltip{
+  display:block !important;
+}
+
+
+

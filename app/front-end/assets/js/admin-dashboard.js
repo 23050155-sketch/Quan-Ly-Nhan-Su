@@ -932,6 +932,105 @@ if (complianceTbody) {
 }
 
 
+
+// =====================================================================
+//                        ATTENDANCE HEATMAP (ADMIN)
+// =====================================================================
+const heatmapForm = document.getElementById("heatmapForm");
+const heatmapWrap = document.getElementById("attendanceHeatmap");
+
+function statusLabel(s) {
+    if (s === "present") return "Đi làm";
+    if (s === "paid_leave") return "Nghỉ có phép";
+    if (s === "absent_unexcused") return "Nghỉ không phép";
+    if (s === "weekend") return "Cuối tuần";
+    if (s === "future") return "Tương lai";
+    return s;
+}
+
+// Render calendar grid Mon->Sun (7 cols), pad đầu tháng cho đúng weekday
+function renderHeatmap(days, year, month) {
+    heatmapWrap.innerHTML = "";
+
+    // header weekday row (optional mini vibe)
+    const grid = document.createElement("div");
+    grid.className = "heatmap-grid";
+
+    // weekday labels (Mon->Sun)
+    const weekdayRow = ["M", "T", "W", "T", "F", "S", "S"];
+    weekdayRow.forEach((w) => {
+        const cell = document.createElement("div");
+        cell.className = "heatmap-cell empty";
+        cell.style.height = "14px";
+        cell.style.width = "18px";
+        cell.style.fontSize = "10px";
+        cell.style.color = "#6b7280";
+        cell.style.display = "flex";
+        cell.style.alignItems = "center";
+        cell.style.justifyContent = "center";
+        cell.textContent = w;
+        grid.appendChild(cell);
+    });
+
+    // compute padding
+    const first = new Date(year, month - 1, 1);
+    // JS: 0=Sun..6=Sat -> convert to Mon-first
+    let jsDow = first.getDay(); // 0 Sun
+    let pad = (jsDow === 0) ? 6 : (jsDow - 1); // Mon=0..Sun=6
+
+    // add empty pads
+    for (let i = 0; i < pad; i++) {
+        const empty = document.createElement("div");
+        empty.className = "heatmap-cell empty";
+        grid.appendChild(empty);
+    }
+
+    // add real days
+    days.forEach((d) => {
+        const cell = document.createElement("div");
+        cell.className = `heatmap-cell ${d.status}`;
+
+        const tip = document.createElement("div");
+        tip.className = "heatmap-tooltip";
+        tip.textContent = `${d.date} • ${statusLabel(d.status)}`;
+        cell.appendChild(tip);
+
+        grid.appendChild(cell);
+    });
+
+    heatmapWrap.appendChild(grid);
+}
+
+async function loadAttendanceHeatmap() {
+    try {
+        const employeeId = document.getElementById("heatmapEmployeeId").value;
+        const year = document.getElementById("heatmapYear").value;
+        const month = document.getElementById("heatmapMonth").value;
+
+        if (!employeeId || !year || !month) {
+            alert("Nhập đủ Employee ID + Năm + Tháng nha");
+            return;
+        }
+
+        const data = await apiGet(`/stats/attendance-heatmap?employee_id=${employeeId}&year=${year}&month=${month}`);
+
+        // data.days = [{date, status}]
+        renderHeatmap(data.days, Number(year), Number(month));
+    } catch (err) {
+        console.error(err);
+        alert("Không load được Attendance Heatmap (check API /stats/attendance-heatmap)");
+    }
+}
+
+if (heatmapForm) {
+    heatmapForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        loadAttendanceHeatmap();
+    });
+}
+
+
+
 // =====================================================================
 //                              INIT
 // =====================================================================

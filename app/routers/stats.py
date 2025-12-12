@@ -2,6 +2,9 @@ from calendar import monthrange
 from datetime import date
 from typing import List
 
+from datetime import timedelta
+from app.schemas.stats import AttendanceHeatmap, AttendanceHeatmapDay
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -143,3 +146,84 @@ def get_leave_summary(
     ]
 
     return LeaveSummary(year=year, month=month, items=items)
+
+
+@router.get("/attendance-heatmap", response_model=AttendanceHeatmap)
+def get_attendance_heatmap(
+    employee_id: int,
+    year: int,
+    month: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin),
+):
+    # validate employee
+    emp = db.query(Employee).filter(Employee.id == employee_id).first()
+    if not emp:
+        raise HTTPException(status_code=404, detail="Không tìm thấy nhân viên")
+
+    start_month = date(year, month, 1)
+    last_day = monthrange(year, month)[1]
+    end_month = date(year, month, last_day)
+
+    # 1) attendance days (có check_in)
+    att_rows = (
+        db.query(Attendance.date)
+        .filter(
+            Attendance.employee_id == employee_id,
+            Attendance.date >= start_month,
+            Attendance.date <= end_month,
+            Attendance.check_in.isnot(None),
+        )
+        .all()
+    )
+    present_days = {r[0] for r in att_rows}
+
+    # 2) paid leave days (approved, overlap month)
+    leaves = (
+        db.query(LeaveRequest)
+        .filter(
+            LeaveRequest.employee_id == employee_id,
+            LeaveRequest.status == "approved",
+            LeaveRequest.start_date <= end_month,
+            LeaveRequest.end_date >= start_month,
+        )
+        .all()
+    )
+
+    paid_leave_days = set()
+    for lv in leaves:
+        s = max(lv.start_date, start_month)
+        e = min(lv.end_date, end_month)
+        d = s
+        while d <= e:
+            paid_leave_days.add(d)
+            d += timedelta(days=1)
+
+    # 3) build days
+    today = date.today()
+    out_days = []
+
+    d = start_month
+    while d <= end_month:
+        # weekend: Saturday(5) Sunday(6)
+        is_weekend = d.weekday() in (5, 6)
+
+        if d in present_days:
+            status_str = "present"
+        elif d in paid_leave_days:
+            status_str = "paid_leave"
+        else:
+            if d > today:
+                status_str = "future"
+            else:
+                status_str = "weekend" if is_weekend else "absent_unexcused"
+
+        out_days.append(AttendanceHeatmapDay(date=d, status=status_str))
+        d += timedelta(days=1)
+
+    return AttendanceHeatmap(
+        employee_id=employee_id,
+        year=year,
+        month=month,
+        days=out_days
+    )
