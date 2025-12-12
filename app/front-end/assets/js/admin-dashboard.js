@@ -141,18 +141,104 @@ async function apiPut(path, body) {
 }
 
 async function apiDelete(path) {
-    const res = await fetch(`${API_BASE_URL}${path}`, {
-        method: "DELETE",
-        headers: {
-            "Authorization": `Bearer ${token}`,
-        },
-    });
-    if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `DELETE ${path} failed`);
-    }
-    return res.json();
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: "DELETE",
+    headers: { "Authorization": `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `DELETE ${path} failed`);
+  }
+
+  // ✅ 204 No Content -> không có body để parse
+  if (res.status === 204) return null;
+
+  // ✅ nếu có body thì parse (còn không thì return null)
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
 }
+
+
+// =====================================================================
+//                          COMPLIANCE MODAL
+// =====================================================================
+const compModal = document.getElementById("compModal");
+const compModalClose = document.getElementById("compModalClose");
+const compModalOk = document.getElementById("compModalOk");
+const compModalTitle = document.getElementById("compModalTitle");
+const compModalMeta = document.getElementById("compModalMeta");
+const compModalDesc = document.getElementById("compModalDesc");
+const acksList = document.getElementById("acksList");
+const acksCount = document.getElementById("acksCount");
+
+function openCompModal() {
+    if (!compModal) return;
+    compModal.classList.remove("hidden");
+}
+
+function closeCompModal() {
+    if (!compModal) return;
+    compModal.classList.add("hidden");
+}
+
+compModalClose?.addEventListener("click", closeCompModal);
+compModalOk?.addEventListener("click", closeCompModal);
+compModal?.addEventListener("click", (e) => {
+    if (e.target?.dataset?.close) closeCompModal();
+});
+
+// tabs trong modal
+document.querySelectorAll("#compModal .tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll("#compModal .tab-btn").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll("#compModal .tab-panel").forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(`tab-${btn.dataset.tab}`)?.classList.add("active");
+    });
+});
+
+async function showPolicyContent(policyId) {
+    const p = await apiGet(`/compliance/policies/${policyId}`);
+    if (compModalTitle) compModalTitle.textContent = p.title || "Compliance Policy";
+    if (compModalMeta) {
+        compModalMeta.textContent =
+            `Mã: ${p.code || "-"} • Hiệu lực: ${p.effective_date || "-"} • ${p.is_active ? "Đang hiệu lực" : "Ngưng"}`;
+    }
+    if (compModalDesc) compModalDesc.textContent = p.description || "(Không có nội dung)";
+    return p;
+}
+
+async function showPolicyAcks(policyId) {
+    const acks = await apiGet(`/compliance/policies/${policyId}/acknowledgements`);
+
+    // map employee_id -> tên (nếu có /employees)
+    let empMap = new Map();
+    try {
+        const employees = await apiGet(`/employees`);
+        empMap = new Map(employees.map(e => [e.id, e.full_name || e.name || `#${e.id}`]));
+    } catch (e) {
+        // ignore
+    }
+
+    if (acksCount) acksCount.textContent = `Tổng đã xác nhận: ${acks.length}`;
+    if (acksList) acksList.innerHTML = "";
+
+    if (!acks.length && acksList) {
+        acksList.innerHTML = `<div class="ack-item"><div class="ack-name">Chưa ai xác nhận</div><div class="ack-time"></div></div>`;
+        return;
+    }
+
+    acks.forEach((a) => {
+        const name = empMap.get(a.employee_id) || `Employee #${a.employee_id}`;
+        const t = a.acknowledged_at ? new Date(a.acknowledged_at).toLocaleString("vi-VN") : "";
+        const row = document.createElement("div");
+        row.className = "ack-item";
+        row.innerHTML = `<div class="ack-name">${name}</div><div class="ack-time">${t}</div>`;
+        acksList?.appendChild(row);
+    });
+}
+
 
 // ---------- DASHBOARD ----------
 async function loadDashboard() {
@@ -870,6 +956,7 @@ async function loadCompliancePolicies() {
                 <td>${statusText}</td>
                 <td>${createdAt}</td>
                 <td>
+                    <button class="btn-small" data-action="view" data-id="${p.id}">Xem nội dung</button>
                     <button class="btn-small btn-danger" data-action="delete" data-id="${p.id}">Xóa</button>
                 </td>
             `;
@@ -918,6 +1005,36 @@ if (complianceTbody) {
         const id = btn.getAttribute("data-id");
         const action = btn.getAttribute("data-action");
 
+        if (action === "view") {
+            try {
+                // giữ tab nội dung active
+                document.querySelector('#compModal .tab-btn[data-tab="content"]')?.click();
+
+                // load nội dung
+                await showPolicyContent(id);
+
+                // ✅ load luôn acknowledgements để user bấm qua tab là thấy liền (hoặc bạn muốn show list ngay thì mình chỉnh tiếp)
+                await showPolicyAcks(id);
+
+                openCompModal();
+            } catch (err) {
+                console.error(err);
+                alert("Không xem được nội dung policy: " + err.message);
+            }
+            }
+
+        if (action === "acks") {
+            try {
+                document.querySelector('#compModal .tab-btn[data-tab="acks"]')?.click();
+                await showPolicyContent(id); // để hiện title/meta
+                await showPolicyAcks(id);
+                openCompModal();
+            } catch (err) {
+                console.error(err);
+                alert("Không xem được danh sách xác nhận: " + err.message);
+            }
+        }
+
         if (action === "delete") {
             if (!confirm("Xóa policy này?")) return;
             try {
@@ -930,6 +1047,86 @@ if (complianceTbody) {
         }
     });
 }
+
+
+
+// =====================================================================
+//                        ATTENDANCE HEATMAP (ADMIN)
+// =====================================================================
+const heatmapForm = document.getElementById("heatmapForm");
+const heatmapWrap = document.getElementById("attendanceHeatmap");
+
+function statusLabel(s) {
+    if (s === "present") return "Đi làm";
+    if (s === "paid_leave") return "Nghỉ có phép";
+    if (s === "absent_unexcused") return "Nghỉ không phép";
+    if (s === "weekend") return "Cuối tuần";
+    if (s === "future") return "Tương lai";
+    return s;
+}
+
+// Render calendar grid Mon->Sun (7 cols), pad đầu tháng cho đúng weekday
+function renderHeatmap(days, year, month) {
+    heatmapWrap.innerHTML = "";
+
+    const grid = document.createElement("div");
+    grid.className = "heatmap-grid";
+
+    // tính padding đầu tháng (Mon-first)
+    const first = new Date(year, month - 1, 1);
+    const jsDow = first.getDay(); // 0=Sun
+    const pad = jsDow === 0 ? 6 : jsDow - 1;
+
+    for (let i = 0; i < pad; i++) {
+        const empty = document.createElement("div");
+        empty.className = "heatmap-cell empty";
+        grid.appendChild(empty);
+    }
+
+    days.forEach((d) => {
+        const cell = document.createElement("div");
+        cell.className = `heatmap-cell ${d.status}`;
+
+        const tip = document.createElement("div");
+        tip.className = "heatmap-tooltip";
+        tip.textContent = `${d.date} • ${statusLabel(d.status)}`;
+        cell.appendChild(tip);
+
+        grid.appendChild(cell);
+    });
+
+    heatmapWrap.appendChild(grid);
+}
+
+
+async function loadAttendanceHeatmap() {
+    try {
+        const employeeId = document.getElementById("heatmapEmployeeId").value;
+        const year = document.getElementById("heatmapYear").value;
+        const month = document.getElementById("heatmapMonth").value;
+
+        if (!employeeId || !year || !month) {
+            alert("Nhập đủ Employee ID + Năm + Tháng nha");
+            return;
+        }
+
+        const data = await apiGet(`/stats/attendance-heatmap?employee_id=${employeeId}&year=${year}&month=${month}`);
+
+        // data.days = [{date, status}]
+        renderHeatmap(data.days, Number(year), Number(month));
+    } catch (err) {
+        console.error(err);
+        alert("Không load được Attendance Heatmap (check API /stats/attendance-heatmap)");
+    }
+}
+
+if (heatmapForm) {
+    heatmapForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        loadAttendanceHeatmap();
+    });
+}
+
 
 
 // =====================================================================
