@@ -418,5 +418,78 @@ if (myComplianceTbody) {
     });
 }
 
+
+
+// ================= EMPLOYEE ATTENDANCE HEATMAP =================
+
+function initHeatmapDate() {
+    const now = new Date();
+    myHeatmapYear.value = now.getFullYear();
+    myHeatmapMonth.value = now.getMonth() + 1;
+}
+
+async function loadEmployeeHeatmap() {
+    const year = myHeatmapYear.value;
+    const month = myHeatmapMonth.value;
+    const wrap = document.getElementById("myAttendanceHeatmap");
+
+    const data = await apiGet(
+        `/stats/my-attendance-calendar?year=${year}&month=${month}`
+    );
+
+    wrap.innerHTML = "";
+    const grid = document.createElement("div");
+    grid.className = "heatmap-grid";
+
+    const firstDay = new Date(year, month - 1, 1).getDay();
+    const pad = firstDay === 0 ? 6 : firstDay - 1;
+    for (let i = 0; i < pad; i++) {
+        const e = document.createElement("div");
+        e.className = "heatmap-cell empty";
+        grid.appendChild(e);
+    }
+
+    data.days.forEach(d => {
+        const cell = document.createElement("div");
+        cell.className = `heatmap-cell ${d.status}`;
+
+        // tooltip
+        const tooltip = document.createElement("div");
+        tooltip.className = "heatmap-tooltip";
+
+        const labelMap = {
+            present: "Đi làm",
+            paid_leave: "Nghỉ có phép",
+            absent_unexcused: "Nghỉ không phép",
+            weekend: "Cuối tuần",
+            future: "Tương lai"
+        };
+
+        tooltip.textContent = `Ngày ${d.day} – ${labelMap[d.status] || d.status}`;
+        cell.appendChild(tooltip);
+
+        grid.appendChild(cell);
+
+    });
+
+    wrap.appendChild(grid);
+}
+
+myHeatmapFilterForm.addEventListener("submit", e => {
+    e.preventDefault();
+    loadEmployeeHeatmap();
+});
+
+// auto load khi mở tab attendance
+const oldShowView = showView;
+showView = function(name) {
+    oldShowView(name);
+    if (name === "attendance") {
+        initHeatmapDate();
+        loadEmployeeHeatmap();
+    }
+};
+
+
 // ====== INIT ======
 showView("profile");

@@ -22,7 +22,7 @@ from app.schemas.stats import (
     LeaveSummaryItem,
 )
 
-from app.core.security import get_current_admin
+from app.core.security import get_current_admin, get_current_user
 from app.models.user import User
 
 router = APIRouter(prefix="/stats", tags=["Statistics"])
@@ -227,3 +227,87 @@ def get_attendance_heatmap(
         month=month,
         days=out_days
     )
+    
+    
+    
+@router.get("/my-attendance-calendar")
+def my_attendance_calendar(
+    year: int,
+    month: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # đảm bảo user có employee_id
+    if not current_user.employee_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Tài khoản chưa gắn với nhân viên"
+        )
+
+    employee_id = current_user.employee_id
+
+    start_month = date(year, month, 1)
+    last_day = monthrange(year, month)[1]
+    end_month = date(year, month, last_day)
+
+    # 1️⃣ attendance days
+    att_rows = (
+        db.query(Attendance.date)
+        .filter(
+            Attendance.employee_id == employee_id,
+            Attendance.date >= start_month,
+            Attendance.date <= end_month,
+            Attendance.check_in.isnot(None),
+        )
+        .all()
+    )
+    present_days = {r[0] for r in att_rows}
+
+    # 2️⃣ paid leave days
+    leaves = (
+        db.query(LeaveRequest)
+        .filter(
+            LeaveRequest.employee_id == employee_id,
+            LeaveRequest.status == "approved",
+            LeaveRequest.start_date <= end_month,
+            LeaveRequest.end_date >= start_month,
+        )
+        .all()
+    )
+
+    paid_leave_days = set()
+    for lv in leaves:
+        s = max(lv.start_date, start_month)
+        e = min(lv.end_date, end_month)
+        d = s
+        while d <= e:
+            paid_leave_days.add(d)
+            d += timedelta(days=1)
+
+    # 3️⃣ build days
+    today = date.today()
+    days = []
+    d = start_month
+    while d <= end_month:
+        if d in present_days:
+            status = "present"
+        elif d in paid_leave_days:
+            status = "paid_leave"
+        elif d.weekday() in (5, 6):
+            status = "weekend"
+        elif d > today:
+            status = "future"
+        else:
+            status = "absent_unexcused"
+
+        days.append({
+            "day": d.day,
+            "status": status
+        })
+        d += timedelta(days=1)
+
+    return {
+        "year": year,
+        "month": month,
+        "days": days
+    }

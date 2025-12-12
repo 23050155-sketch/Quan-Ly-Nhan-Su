@@ -60,6 +60,42 @@
                 </thead>
                 <tbody></tbody>
             </table>
+            <hr style="margin:24px 0;">
+
+            <h3 style="text-align:center;">Attendance Heatmap của tôi</h3>
+
+            <form id="myHeatmapFilterForm" class="employee-heatmap-form">
+                <div>
+                    <label>Năm</label>
+                    <input type="number" id="myHeatmapYear" required>
+                </div>
+                <div>
+                    <label>Tháng</label>
+                    <input type="number" id="myHeatmapMonth" min="1" max="12" required>
+                </div>
+                <button class="btn-secondary" type="submit">Xem Heatmap</button>
+            </form>
+
+            <div class="heatmap-legend employee">
+                <div class="legend-item"><span class="legend-box present"></span> Đi làm</div>
+                <div class="legend-item"><span class="legend-box paid_leave"></span> Nghỉ có phép</div>
+                <div class="legend-item"><span class="legend-box absent_unexcused"></span> Nghỉ không phép</div>
+                <div class="legend-item"><span class="legend-box weekend"></span> Cuối tuần</div>
+            </div>
+
+            <div class="heatmap-weekdays employee">
+                <span>T2</span>
+                <span>T3</span>
+                <span>T4</span>
+                <span>T5</span>
+                <span>T6</span>
+                <span>T7</span>
+                <span>CN</span>
+            </div>
+
+
+            <div id="myAttendanceHeatmap" class="heatmap-wrap employee"></div>
+
         </section>
 
         <!-- LEAVES -->
