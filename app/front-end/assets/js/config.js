@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "https://quan-ly-nhan-su-2.onrender.com";
 
 const ADMIN_DASHBOARD_URL = "/html/admin-dashboard.html";
 const EMPLOYEE_HOME_URL   = "/html/employee-home.html";
