@@ -39,10 +39,12 @@ def seed_default_admin():
     try:
         username = os.getenv("DEFAULT_ADMIN_USERNAME", "admin")
         password = os.getenv("DEFAULT_ADMIN_PASSWORD", "admin123")
-        email = os.getenv("DEFAULT_ADMIN_EMAIL", "admin@company.local")
+        email = os.getenv("DEFAULT_ADMIN_EMAIL", "quanlynhansu1415@gmail.com")
 
         existed = db.query(User).filter(User.username == username).first()
         if existed:
+            existed.email = email
+            db.commit()
             return
 
         admin = User(
@@ -50,16 +52,19 @@ def seed_default_admin():
             role="admin",
             email=email,
             employee_id=None,
-            password_hash=get_password_hash(password),
+            password_hash=get_password_hash(password)
         )
+
         db.add(admin)
         db.commit()
         print(f"✅ Seeded default admin: {username}")
+
     except Exception as e:
         db.rollback()
         print("❌ Seed admin failed:", e)
     finally:
         db.close()
+
 
 @app.on_event("startup")
 def on_startup():
