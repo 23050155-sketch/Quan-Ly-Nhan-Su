@@ -21,25 +21,25 @@ Hệ thống Quản lý Nhân Sự (HR / Employee Management) được xây dự
 
 
 # Công Nghệ Sử Dụng
-* Backend
-        Python 3.12
-        FastAPI
-        SQLAlchemy ORM
-        JWT Authentication
-        Uvicorn
+* Backend:
+        Python 3.12,
+        FastAPI,
+        SQLAlchemy ORM,
+        JWT Authentication,
+        Uvicorn,
         Swagger UI
 
-* Database
+* Database:
         MySQL
 
-* Frontend
-        HTML
-        CSS
+* Frontend:
+        HTML,
+        CSS,
         JavaScript (Vanilla JS)
 
-* Môi Trường Phát Triển
-        VSCode
-        SSH Remote
+* Môi Trường Phát Triển:
+        VSCode,
+        SSH Remote,
         Oracle VirtualBox (Linux VM)
 
 
@@ -59,28 +59,28 @@ FastAPI Backend (REST API)
 
 # Cài Đặt & Chạy Dự Án
 1. Clone Project:
-git clone https://github.com/23050155-sketch/Quan-Ly-Nhan-Su.git
-cd Quan-Ly-Nhan-Su
+- git clone https://github.com/23050155-sketch/Quan-Ly-Nhan-Su.git
+- cd Quan-Ly-Nhan-Su
 
 2. Tạo môi trường ảo:
-python3 -m venv venv
-source venv/bin/activate
+- python3 -m venv venv
+- source venv/bin/activate
 
 3. Cài đặt thư viện:
-pip install -r requirements.txt
+- pip install -r requirements.txt
 
 4. Cấu hình Database MySQL:
     - Tạo Database:
         CREATE DATABASE hr_db;
-    - Cập nhật chuỗi kết nối trong file
+    - Cập nhật chuỗi kết nối trong file:
         app/database.py -> DATABASE_URL = "mysql+pymysql://user:password@localhost:3306/hr_db"
 
 5. Chạy ứng dụng:
-uvicorn app.main:app --reload
+- uvicorn app.main:app --reload
 
 6. Truy cập:
-http://localhost:8000/docs (Swagger UI)
-http://localhost:8000/html/login.html (Đăng nhập) -> Tài khoản User quyền truy cập admin mặc định có trong main.py
+- http://localhost:8000/docs (Swagger UI)
+- http://localhost:8000/html/login.html (Đăng nhập) -> Tài khoản User quyền truy cập admin mặc định có trong main.py
 
 
 
@@ -88,11 +88,11 @@ http://localhost:8000/html/login.html (Đăng nhập) -> Tài khoản User quy�
 Hệ thống sử dụng JWT (JSON Web Token):
 
 - Admin
-    Toàn quyền quản lý hệ thống
+    Toàn quyền quản lý hệ thống,
     Quản lý nhân viên, lương, nghỉ phép, thống kê
 
 - Employee
-    Chỉ thao tác dữ liệu cá nhân
+    Chỉ thao tác dữ liệu cá nhân,
     Không truy cập dữ liệu người khác
 
 
@@ -100,45 +100,37 @@ Hệ thống sử dụng JWT (JSON Web Token):
 # Chức Năng Chính
 
 1. Quản Lý Nhân Viên:
-Thêm / sửa / xóa / xem nhân viên
+Thêm / sửa / xóa / xem nhân viên,
 Lưu thông tin: họ tên, email, giới tính, chức vụ, lương/ngày
 
 2. Chấm Công:
-Ghi nhận ngày làm việc
+Ghi nhận ngày làm việc,
 Theo dõi trạng thái: đi làm, nghỉ, đi muộn
 Hiển thị lịch sử chấm công
 
 3. Xin Nghỉ Phép:
-Nhân viên gửi đơn xin nghỉ
-Admin duyệt / từ chối
+Nhân viên gửi đơn xin nghỉ,
+Admin duyệt / từ chối,
 Cập nhật trạng thái đơn nghỉ
 
 4. Tính Lương:
 Tính lương tự động theo tháng dựa trên:
-Số ngày công
-Số ngày nghỉ có phép
-Lương/ngày
+Số ngày công,
+Số ngày nghỉ có phép,
+Lương/ngày,
 Nhân viên xem chi tiết bảng lương
 
 5. Thống Kê – Báo Cáo:
-Tổng số nhân viên
-Tổng ngày công
-Thống kê lương theo tháng
-Thống kê nghỉ phép
+Tổng số nhân viên,
+Tổng ngày công,
+Thống kê lương theo tháng,
+Thống kê nghỉ phép,
 Dashboard tổng quan hệ thống
 
 
 
 # API Chính
-Module	                        Endpoint
-Authentication	                /auth
-Users	                        /users
-Employees	                    /employees
-Attendance	                    /attendances
-Leave Requests	                /leaves
-Payroll	                        /payrolls
-Statistics	                    /stats
-Reports	                        /reports
+![Api Main](app/docs/screenshots/api-main.png)
 
 
 
@@ -166,16 +158,16 @@ Reports	                        /reports
 # Thông Tin Sinh Viên
 
 1. Sinh viên 1:
-Họ tên: Bùi Anh Dũng
-MSSV: 23050155
-Trường: Đại học Bình Dương
-Môn: Phát triển ứng dụng mã nguồn mở
+- Họ tên: Bùi Anh Dũng
+- MSSV: 23050155
+- Trường: Đại học Bình Dương
+- Môn: Phát triển ứng dụng mã nguồn mở
 
 2. Sinh viên 2:
-Họ tên: Nguyễn Quang Hoài Đức
-MSSV: 23050181
-Trường: Đại học Bình Dương
-Môn: Phát triển ứng dụng mã nguồn mở
+- Họ tên: Nguyễn Quang Hoài Đức
+- MSSV: 23050181
+- Trường: Đại học Bình Dương
+- Môn: Phát triển ứng dụng mã nguồn mở
 
 
 
